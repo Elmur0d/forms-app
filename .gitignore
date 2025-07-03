@@ -1,3 +1,5 @@
+# Игнорировать node_modules везде
+**/node_modules/
 # Общие
 node_modules/
 .env
