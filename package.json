@@ -1,0 +1,10 @@
+{
+  "name": "forms-app",
+  "scripts": {
+    "start": "concurrently \"cd client && npm run dev\" \"cd server && node index.js\"",
+    "deploy-client": "cd client && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,0 +1,11 @@
+# Общие
+node_modules/
+.env
+*.log
+
+# Фронтенд
+client/dist/
+client/.vite/
+
+# Бэкенд
+server/logs/
