@@ -11,3 +11,4 @@ client/.vite/
 
 # Бэкенд
 server/logs/
+server/.env/
