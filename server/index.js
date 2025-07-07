@@ -7,8 +7,8 @@ import questionRoutes from './routes/questionRoutes.js';
 const app = express();
 
 const allowedOrigins = [
-    'https://forms-app-rho.vercel.app', 
-    'http://localhost:5173'
+  'https://forms-app-rho.vercel.app',
+  'http://localhost:5173' 
 ];
 
 const corsOptions = {
@@ -18,19 +18,18 @@ const corsOptions = {
     } else {
       callback(new Error('Not allowed by CORS'));
     }
-  },
-  optionsSuccessStatus: 200,
+  }
 };
+
+app.options('*', cors(corsOptions));
 
 app.use(cors(corsOptions));
 
 app.use(express.json());
 
-
 app.get('/api', (req, res) => {
   res.send('Hello from Server!');
 });
-
 
 app.use('/api/auth', authRoutes);
 app.use('/api/templates', templateRoutes);
