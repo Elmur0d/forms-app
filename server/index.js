@@ -6,7 +6,12 @@ import questionRoutes from './routes/questionRoutes.js';
 
 const app = express();
 
-app.use(cors());
+const corsOptions = {
+  origin: 'forms-7xzcdxa4m-elmur0ds-projects.vercel.app', 
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
