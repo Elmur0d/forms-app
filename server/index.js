@@ -6,22 +6,7 @@ import questionRoutes from './routes/questionRoutes.js';
 
 const app = express();
 
-const allowedOrigins = [
-  'https://forms-app-rho.vercel.app',
-  'http://localhost:5173'
-];
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }
-};
-
-app.use(cors(corsOptions));
+app.use(cors());
 
 app.use(express.json());
 
