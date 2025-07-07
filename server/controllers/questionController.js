@@ -1,9 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-// @route   POST /api/templates/:templateId/questions
-// @desc    Add a question to a template
-// @access  Private
+
 export const addQuestion = async (req, res) => {
   const { templateId } = req.params;
   const { title, type } = req.body;
@@ -19,6 +17,17 @@ export const addQuestion = async (req, res) => {
 
     if (!template || (template.authorId !== req.user.id && req.user.role !== 'ADMIN')) {
       return res.status(403).json({ msg: 'Действие запрещено' });
+    }
+
+    const questionsCountByType = await prisma.question.count({
+      where: {
+        templateId: parseInt(templateId),
+        type: type, 
+      },
+    });
+
+    if (questionsCountByType >= 4) {
+      return res.status(400).json({ msg: `Достигнут лимит (4) для вопросов типа "${type}"` });
     }
 
     const questionsCount = await prisma.question.count({ where: { templateId: parseInt(templateId) } });
@@ -39,9 +48,7 @@ export const addQuestion = async (req, res) => {
   }
 };
 
-// @route   PUT /api/questions/:id
-// @desc    Update a question
-// @access  Private
+
 export const updateQuestion = async (req, res) => {
     const { id } = req.params;
     const { title, type } = req.body;
@@ -67,9 +74,6 @@ export const updateQuestion = async (req, res) => {
     }
 };
 
-// @route   DELETE /api/questions/:id
-// @desc    Delete a question
-// @access  Private
 export const deleteQuestion = async (req, res) => {
     const { id } = req.params;
     

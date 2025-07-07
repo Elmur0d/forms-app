@@ -61,6 +61,13 @@ function TemplateDetailPage() {
     }
   };
 
+  const questionCounts = template?.questions.reduce((acc, q) => {
+    acc[q.type] = (acc[q.type] || 0) + 1;
+    return acc;
+  }, {});
+
+  const isLimitReached = questionCounts?.[newQuestionType] >= 4;
+
   if (loading) return <div>Загрузка...</div>;
   if (error) return <div>Ошибка: {error}</div>;
   if (!template) return <div>Шаблон не найден.</div>;
@@ -86,7 +93,9 @@ function TemplateDetailPage() {
           <option value="integer">Число</option>
           <option value="checkbox">Чекбокс</option>
         </select>
-        <button type="submit">Добавить</button>
+        <button type="submit" disabled={isLimitReached}>
+          {isLimitReached ? 'Лимит достигнут' : 'Добавить'}
+        </button>
       </form>
       <hr />
 
