@@ -6,18 +6,12 @@
       "use": "@vercel/node"
     },
     {
-      "src": "client/package.json",
+      "src": "client/vite.config.js",
       "use": "@vercel/static-build"
     }
   ],
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/server/index.js"
-    },
-    {
-      "source": "/((?!api/|assets/|vite.svg).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/(.*)", "destination": "/server/index.js" },
+    { "source": "/(.*)", "destination": "/client/index.html" }
   ]
 }
