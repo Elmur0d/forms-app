@@ -53,7 +53,7 @@ function App() {
           }
         />
         <Route path="/" element={<Navigate to={token ? "/dashboard" : "/login"} />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/regsiter" />} />
       </Routes>
     </BrowserRouter>
   );
