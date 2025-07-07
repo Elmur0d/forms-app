@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage.jsx';
 import RegistrationPage from './pages/RegistrationPage.jsx';
@@ -17,48 +17,32 @@ function Dashboard() {
 }
 
 function ProtectedRoute({ children }) {
-  const token = useAuthStore((state) => state.token);
+  const { token, _hasHydrated } = useAuthStore();
+
+  if (!_hasHydrated) {
+    return <div>Загрузка...</div>;
+  }
+
   return token ? children : <Navigate to="/login" />;
 }
 
-function AppRoutes() {
-  const token = useAuthStore((state) => state.token);
-
-  return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegistrationPage />} />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to={token ? "/dashboard" : "/login"} />} />
-    </Routes>
-  );
-}
-
-
 
 function App() {
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
-    
-    setHydrated(useAuthStore.persist.hasHydrated());
-
-    return () => {
-      unsub();
-    };
-  }, []);
-
   return (
     <BrowserRouter>
-      {hydrated ? <AppRoutes /> : <div>Загрузка...</div>}
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegistrationPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
+      </Routes>
     </BrowserRouter>
   );
 }
