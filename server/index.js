@@ -7,7 +7,7 @@ import questionRoutes from './routes/questionRoutes.js';
 const app = express();
 
 const corsOptions = {
-  origin: 'forms-7xzcdxa4m-elmur0ds-projects.vercel.app', 
+  origin: 'forms-app-rho.vercel.app', 
   optionsSuccessStatus: 200
 };
 
