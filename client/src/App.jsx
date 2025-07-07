@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage.jsx';
 import RegistrationPage from './pages/RegistrationPage.jsx';
 import UserPage from './pages/UserPage.jsx';
+import TemplateDetailPage from './pages/TemplateDetailPage.jsx';
 import useAuthStore from './store/authStore.js';
 
 
@@ -22,6 +23,14 @@ function App() {
           element={
             <ProtectedRoute>
               <UserPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/template/:id"
+          element={
+            <ProtectedRoute>
+              <TemplateDetailPage />
             </ProtectedRoute>
           }
         />

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import useTemplateStore from '../store/templateStore';
 import useAuthStore from '../store/authStore';
 import CreateTemplateModal from '../components/CreateTemplateModal';
@@ -27,7 +28,9 @@ function UserPage() {
       {myTemplates.length > 0 ? (
         <ul>
           {myTemplates.map((template) => (
-            <li key={template.id}>{template.title}</li>
+            <li key={template.id}>
+              <Link to={`/template/${template.id}`}>{template.title}</Link>
+            </li>
           ))}
         </ul>
       ) : (
