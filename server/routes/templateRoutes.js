@@ -1,0 +1,27 @@
+import express from 'express';
+import { createTemplate, getMyTemplates, getTemplates, getTemplateById, updateTemplate, deleteTemplate } from '../controllers/templateController.js';
+import { protect } from '../middleware/authMiddleware.js';
+import { addQuestion } from '../controllers/questionController.js';
+
+const optionalProtect = (req, res, next) => {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        return protect(req, res, next);
+    }
+    next();
+};
+
+const router = express.Router();
+
+router.route('/').get(getTemplates).post(protect, createTemplate);
+
+router.route('/my').get(protect, getMyTemplates);
+
+router
+  .route('/:id')
+  .get(optionalProtect, getTemplateById) 
+  .put(protect, updateTemplate)
+  .delete(protect, deleteTemplate);
+
+router.route('/:templateId/questions').post(protect, addQuestion);
+
+export default router;

@@ -1,14 +1,13 @@
-const path = require('path');
-const sequelize = require('../config/db');
+const { Sequelize, DataTypes } = require('sequelize');
+const sequelize = new Sequelize('postgres://user:pass@localhost:5432/forms');
 
-const models = {};
+const User = sequelize.define('User', {
+  email: { type: DataTypes.STRING, unique: true },
+  password: DataTypes.STRING,
+  isAdmin: { type: DataTypes.BOOLEAN, defaultValue: false }
+});
 
-require('fs')
-  .readdirSync(__dirname)
-  .filter(file => file !== 'index.js')
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, require('sequelize').DataTypes);
-    models[model.name] = model;
-  });
-
-module.exports = { sequelize, ...models };
+const Template = sequelize.define('Template', {
+  title: DataTypes.STRING,
+  isPublic: { type: DataTypes.BOOLEAN, defaultValue: true }
+});

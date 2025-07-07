@@ -1,13 +1,20 @@
-require('dotenv').config();
-const express = require('express');
+// server/index.js
+import express from 'express';
+import authRoutes from './routes/auth.js'; 
+import templateRoutes from './routes/templateRoutes.js';
+import questionRoutes from './routes/questionRoutes.js';
+
+
 const app = express();
 
-app.use(require('cors')());
+
 app.use(express.json());
 
-app.get('/api/test', (req, res) => {
-  res.json({ message: "Backend works!" });
-});
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+app.use('/api/auth', authRoutes);
+app.use('/api/templates', templateRoutes);
+app.use('/api/questions', questionRoutes); 
+
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}`));

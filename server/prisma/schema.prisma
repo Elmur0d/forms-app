@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int        @id @default(autoincrement())
+  email      String     @unique
+  name       String?
+  password   String
+  role       Role       @default(USER)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  templates  Template[] // Пользователь может иметь много шаблонов
+}
+
+model Template {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  topic       Topic      @default(OTHER)
+  imageUrl    String?
+  isPublic    Boolean    @default(true)
+  author      User       @relation(fields: [authorId], references: [id])
+  authorId    Int
+  questions   Question[] // Шаблон может иметь много вопросов
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Question {
+  id         Int      @id @default(autoincrement())
+  title      String
+  type       String   // e.g., 'single-line', 'multi-line', 'integer', 'checkbox'
+  order      Int      // Для сортировки drag'n'drop
+  template   Template @relation(fields: [templateId], references: [id])
+  templateId Int
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Topic {
+  EDUCATION
+  QUIZ
+  POLL
+  OTHER
+}

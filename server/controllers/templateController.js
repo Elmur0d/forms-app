@@ -1,0 +1,154 @@
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+
+// @route   POST /api/templates
+// @desc    Create a new template
+// @access  Private
+export const createTemplate = async (req, res) => {
+  const { title, description, topic, isPublic } = req.body;
+  
+  if (!title) {
+    return res.status(400).json({ msg: 'Пожалуйста, укажите заголовок' });
+  }
+
+  try {
+    const newTemplate = await prisma.template.create({
+      data: {
+        title,
+        description,
+        topic,
+        isPublic,
+        authorId: req.user.id, 
+      },
+    });
+    res.status(201).json(newTemplate);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};
+
+// @route   GET /api/templates
+// @desc    Get all public templates
+// @access  Public
+export const getTemplates = async (req, res) => {
+  try {
+    const templates = await prisma.template.findMany({
+      where: { isPublic: true },
+      orderBy: { createdAt: 'desc' }, 
+      include: {
+        author: {
+          select: { name: true, email: true }, 
+        },
+      },
+    });
+    res.json(templates);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};
+
+// @route   GET /api/templates/my
+// @desc    Get all templates for the logged-in user
+// @access  Private
+export const getMyTemplates = async (req, res) => {
+  try {
+    const templates = await prisma.template.findMany({
+      where: { authorId: req.user.id }, 
+      orderBy: { updatedAt: 'desc' },
+    });
+    res.json(templates);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};
+
+
+// @route   GET /api/templates/:id
+// @desc    Get a single template by ID
+// @access  Public (with checks)
+export const getTemplateById = async (req, res) => {
+  try {
+    const template = await prisma.template.findUnique({
+      where: { id: parseInt(req.params.id) },
+      include: {
+        author: { select: { name: true } },
+        questions: { orderBy: { order: 'asc' } }, 
+      },
+    });
+
+    if (!template) {
+      return res.status(404).json({ msg: 'Шаблон не найден' });
+    }
+
+    if (!template.isPublic && (!req.user || (template.authorId !== req.user.id && req.user.role !== 'ADMIN'))) {
+        return res.status(403).json({ msg: 'Доступ запрещен' });
+    }
+    
+    res.json(template);
+  } catch (error) {
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};
+
+// @route   PUT /api/templates/:id
+// @desc    Update a template
+// @access  Private
+export const updateTemplate = async (req, res) => {
+  try {
+    let template = await prisma.template.findUnique({
+      where: { id: parseInt(req.params.id) },
+    });
+
+    if (!template) {
+      return res.status(404).json({ msg: 'Шаблон не найден' });
+    }
+
+    if (template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ msg: 'Действие запрещено' });
+    }
+
+    const { title, description, topic, isPublic } = req.body;
+    const updatedTemplate = await prisma.template.update({
+      where: { id: parseInt(req.params.id) },
+      data: { title, description, topic, isPublic },
+    });
+    
+    res.json(updatedTemplate);
+  } catch (error) {
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};
+
+// @route   DELETE /api/templates/:id
+// @desc    Delete a template
+// @access  Private
+export const deleteTemplate = async (req, res) => {
+  try {
+    const template = await prisma.template.findUnique({
+      where: { id: parseInt(req.params.id) },
+    });
+
+    if (!template) {
+      return res.status(404).json({ msg: 'Шаблон не найден' });
+    }
+    
+    if (template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ msg: 'Действие запрещено' });
+    }
+    
+    await prisma.question.deleteMany({
+      where: { templateId: parseInt(req.params.id) },
+    });
+
+    await prisma.template.delete({
+      where: { id: parseInt(req.params.id) },
+    });
+
+    res.json({ msg: 'Шаблон успешно удален' });
+  } catch (error) {
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};

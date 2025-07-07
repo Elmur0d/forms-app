@@ -1,9 +1,21 @@
 module.exports = (sequelize, DataTypes) => {
   return sequelize.define('User', {
-    email: { 
+    email: {
       type: DataTypes.STRING,
-      unique: true
+      unique: true,
+      validate: { isEmail: true }
     },
-    password: DataTypes.STRING
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    isAdmin: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    isBlocked: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    }
   });
 };
