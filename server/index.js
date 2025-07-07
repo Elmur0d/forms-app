@@ -8,7 +8,7 @@ const app = express();
 
 const allowedOrigins = [
   'https://forms-app-rho.vercel.app',
-  'http://localhost:5173' 
+  'http://localhost:5173'
 ];
 
 const corsOptions = {
@@ -20,8 +20,6 @@ const corsOptions = {
     }
   }
 };
-
-app.options('*', cors(corsOptions));
 
 app.use(cors(corsOptions));
 
