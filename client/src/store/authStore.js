@@ -22,7 +22,7 @@ const useAuthStore = create(
           set({ token, user: userResponse.data });
           return { success: true };
         } catch (error) {
-          console.error('Login failed:', error);
+          console.error('Login failed:', error.response?.data || error.message);
           return { success: false, error: 'Неверный email или пароль' };
         }
       },
@@ -35,8 +35,8 @@ const useAuthStore = create(
           const loginResult = await get().login(email, password);
           return loginResult;
         } catch (error) {
-          console.error('Registration failed:', error);
-          const errorMessage = error.response?.data?.msg || 'Ошибка регистрации';
+          console.error('Registration failed:', error.response?.data || error.message); 
+          const errorMessage = error.response?.data?.errors?.[0]?.msg || error.response?.data?.msg || 'Ошибка регистрации';
           return { success: false, error: errorMessage };
         }
       },
