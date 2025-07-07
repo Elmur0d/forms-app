@@ -4,28 +4,21 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegistrationPage from './pages/RegistrationPage.jsx';
 import useAuthStore from './store/authStore.js';
 
-
 function Dashboard() {
   const { user, logout } = useAuthStore();
   return (
     <div>
       <h1>Добро пожаловать, {user?.name || user?.email}!</h1>
-      <p>Вы успешно вошли в систему. Перезагрузите страницу, и вы останетесь здесь.</p>
+      <p>Вы успешно вошли в систему.</p>
       <button onClick={logout}>Выйти</button>
     </div>
   );
 }
 
 function ProtectedRoute({ children }) {
-  const { token, _hasHydrated } = useAuthStore();
-
-  if (!_hasHydrated) {
-    return <div>Загрузка...</div>;
-  }
-
+  const token = useAuthStore((state) => state.token);
   return token ? children : <Navigate to="/login" />;
 }
-
 
 function App() {
   return (
@@ -41,7 +34,8 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/dashboard" />} />
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );
