@@ -1,7 +1,8 @@
-// client/src/store/authStore.js
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 const useAuthStore = create(
   persist(
@@ -11,11 +12,10 @@ const useAuthStore = create(
 
       login: async (email, password) => {
         try {
-          const response = await axios.post('/api/auth/login', { email, password });
+          const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
           const { token } = response.data;
           
-          
-          const userResponse = await axios.get('/api/auth/me', {
+          const userResponse = await axios.get(`${API_URL}/api/auth/me`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -31,8 +31,7 @@ const useAuthStore = create(
 
       register: async (name, email, password) => {
         try {
-          await axios.post('/api/auth/register', { name, email, password });
-          // После успешной регистрации сразу логиним пользователя
+          await axios.post(`${API_URL}/api/auth/register`, { name, email, password });
           const loginResult = await get().login(email, password);
           return loginResult;
         } catch (error) {
