@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-
 export const addQuestion = async (req, res) => {
   const { templateId } = req.params;
   const { title, type } = req.body;
@@ -18,11 +17,11 @@ export const addQuestion = async (req, res) => {
     if (!template || (template.authorId !== req.user.id && req.user.role !== 'ADMIN')) {
       return res.status(403).json({ msg: 'Действие запрещено' });
     }
-
+    
     const questionsCountByType = await prisma.question.count({
       where: {
         templateId: parseInt(templateId),
-        type: type, 
+        type: type,
       },
     });
 
@@ -37,7 +36,7 @@ export const addQuestion = async (req, res) => {
         title,
         type,
         templateId: parseInt(templateId),
-        order: questionsCount, 
+        order: questionsCount,
       },
     });
 
@@ -48,7 +47,7 @@ export const addQuestion = async (req, res) => {
   }
 };
 
-
+// Обновление вопроса
 export const updateQuestion = async (req, res) => {
     const { id } = req.params;
     const { title, type } = req.body;
@@ -74,6 +73,7 @@ export const updateQuestion = async (req, res) => {
     }
 };
 
+// Удаление вопроса
 export const deleteQuestion = async (req, res) => {
     const { id } = req.params;
     
@@ -97,39 +97,42 @@ export const deleteQuestion = async (req, res) => {
     }
 };
 
+// Изменение порядка вопросов
 export const reorderQuestions = async (req, res) => {
-  const { orderedQuestionIds } = req.body;
-
-  if (!orderedQuestionIds || !Array.isArray(orderedQuestionIds) || orderedQuestionIds.length === 0) {
-    return res.status(400).json({ msg: 'Необходим массив orderedQuestionIds' });
-  }
-
-  try {
-    const firstQuestion = await prisma.question.findUnique({
-      where: { id: parseInt(orderedQuestionIds[0]) },
-      include: { template: true },
-    });
-
-    if (!firstQuestion) {
-      return res.status(404).json({ msg: 'Вопрос не найден' });
+    const { orderedQuestionIds } = req.body;
+  
+    if (!orderedQuestionIds || !Array.isArray(orderedQuestionIds) || orderedQuestionIds.length === 0) {
+      return res.status(400).json({ msg: 'Необходим массив orderedQuestionIds' });
     }
-
-    if (firstQuestion.template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ msg: 'Действие запрещено' });
+  
+    try {
+      // Проверяем, что пользователь имеет право изменять этот шаблон
+      const firstQuestion = await prisma.question.findUnique({
+        where: { id: parseInt(orderedQuestionIds[0]) },
+        include: { template: true },
+      });
+  
+      if (!firstQuestion) {
+        return res.status(404).json({ msg: 'Вопрос не найден' });
+      }
+  
+      if (firstQuestion.template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
+        return res.status(403).json({ msg: 'Действие запрещено' });
+      }
+  
+      // Обновляем порядок
+      const transaction = orderedQuestionIds.map((id, index) =>
+        prisma.question.update({
+          where: { id: parseInt(id) },
+          data: { order: index },
+        })
+      );
+      
+      await prisma.$transaction(transaction);
+      
+      res.status(200).json({ msg: 'Порядок вопросов успешно обновлен' });
+    } catch (error) {
+      console.error('Reorder failed:', error);
+      res.status(500).json({ msg: 'Ошибка сервера' });
     }
-
-    const transaction = orderedQuestionIds.map((id, index) =>
-      prisma.question.update({
-        where: { id: parseInt(id) },
-        data: { order: index },
-      })
-    );
-    
-    await prisma.$transaction(transaction);
-    
-    res.status(200).json({ msg: 'Порядок вопросов успешно обновлен' });
-  } catch (error) {
-    console.error('Reorder failed:', error);
-    res.status(500).json({ msg: 'Ошибка сервера' });
-  }
 };
