@@ -11,9 +11,10 @@ function TemplateDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const token = useAuthStore((state) => state.token);
+  const [newQuestionTitle, setNewQuestionTitle] = useState('');
+  const [newQuestionType, setNewQuestionType] = useState('single-line');
 
-  useEffect(() => {
-    const fetchTemplate = async () => {
+  const fetchTemplate = async () => {
       try {
         const response = await axios.get(`${API_URL}/api/templates/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -24,10 +25,41 @@ function TemplateDetailPage() {
       } finally {
         setLoading(false);
       }
-    };
-
+  };
+  
+  useEffect(() => {
     fetchTemplate();
   }, [id, token]);
+
+  const handleAddQuestion = async (e) => {
+    e.preventDefault();
+    if (!newQuestionTitle) return;
+
+    try {
+      await axios.post(
+        `${API_URL}/api/templates/${id}/questions`,
+        { title: newQuestionTitle, type: newQuestionType },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setNewQuestionTitle(''); 
+      fetchTemplate(); 
+    } catch (err) {
+      alert('Не удалось добавить вопрос');
+    }
+  };
+
+  const handleDeleteQuestion = async (questionId) => {
+    if (window.confirm('Вы уверены, что хотите удалить этот вопрос?')) {
+      try {
+        await axios.delete(`${API_URL}/api/questions/${questionId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        fetchTemplate(); // Обновляем список вопросов
+      } catch (err) {
+        alert('Не удалось удалить вопрос');
+      }
+    }
+  };
 
   if (loading) return <div>Загрузка...</div>;
   if (error) return <div>Ошибка: {error}</div>;
@@ -39,11 +71,38 @@ function TemplateDetailPage() {
       <h1>{template.title}</h1>
       <p><strong>Описание:</strong> {template.description || 'Нет описания'}</p>
       <hr />
+      
+      <form onSubmit={handleAddQuestion}>
+        <h3>Добавить новый вопрос</h3>
+        <input
+          type="text"
+          value={newQuestionTitle}
+          onChange={(e) => setNewQuestionTitle(e.target.value)}
+          placeholder="Текст вопроса"
+        />
+        <select value={newQuestionType} onChange={(e) => setNewQuestionType(e.target.value)}>
+          <option value="single-line">Однострочный текст</option>
+          <option value="multi-line">Многострочный текст</option>
+          <option value="integer">Число</option>
+          <option value="checkbox">Чекбокс</option>
+        </select>
+        <button type="submit">Добавить</button>
+      </form>
+      <hr />
+
       <h2>Вопросы:</h2>
       {template.questions.length > 0 ? (
         <ul>
           {template.questions.map((q) => (
-            <li key={q.id}>{q.title} ({q.type})</li>
+            <li key={q.id}>
+                {q.title} ({q.type})
+                <button 
+                onClick={() => handleDeleteQuestion(q.id)} 
+                style={{ marginLeft: '10px', color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}
+              >
+                Удалить
+              </button>
+            </li>
           ))}
         </ul>
       ) : (
