@@ -26,12 +26,24 @@ function ProtectedRoute({ children }) {
 function App() {
 
   const token = useAuthStore((state) => state.token);
+  const [hydrated, setHydrated] = useState(useAuthStore.persist.hasHydrated());
+
+  useEffect(() => {
+    const unsub = useAuthStore.persist.onRehydrate(() => setHydrated(true));
+    return () => {
+      unsub();
+    };
+  }, []);
+
+  if (!hydrated) {
+    return null;
+  }
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={token ? <Navigate to="/dashboard" /> : <LoginPage />} />
-        <Route path="/register" element={token ? <Navigate to="/dashboard" /> : <RegistrationPage />} /> 
+        <Route path="/login" element={token ? <Navigate to="/" /> : <LoginPage />} />
+        <Route path="/register" element={token ? <Navigate to="/" /> : <RegistrationPage />} /> 
         <Route
           path="/dashboard"
           element={
@@ -40,7 +52,8 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to={token ? "/dashboard" : "/login"} />} /> 
+        <Route path="/" element={<Navigate to={token ? "/dashboard" : "/login"} />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );
