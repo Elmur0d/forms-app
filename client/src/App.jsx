@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage.jsx';
-import RegistrationPage from './pages.RegistrationPage.jsx';
+import RegistrationPage from './pages/RegistrationPage.jsx';
 import useAuthStore from './store/authStore.js';
 
 function Dashboard() {
