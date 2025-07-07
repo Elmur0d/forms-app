@@ -24,6 +24,28 @@ const useTemplateStore = create((set) => ({
       set({ error: 'Не удалось загрузить шаблоны', isLoading: false });
     }
   },
+
+  createTemplate: async (templateData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const token = useAuthStore.getState().token;
+      const response = await axios.post(`${API_URL}/api/templates`, templateData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // Добавляем новый шаблон в начало списка
+      set((state) => ({
+        myTemplates: [response.data, ...state.myTemplates],
+        isLoading: false,
+      }));
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to create template:", error);
+      set({ error: 'Не удалось создать шаблон', isLoading: false });
+      return { success: false };
+    }
+  },
 }));
 
 export default useTemplateStore;

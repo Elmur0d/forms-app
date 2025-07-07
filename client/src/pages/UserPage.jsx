@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import useTemplateStore from '../store/templateStore';
 import useAuthStore from '../store/authStore';
+import CreateTemplateModal from '../components/CreateTemplateModal';
 
 function UserPage() {
   const { user, logout } = useAuthStore();
   const { myTemplates, isLoading, fetchMyTemplates } = useTemplateStore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchMyTemplates();
@@ -18,7 +20,7 @@ function UserPage() {
       <hr />
       
       <h2>Мои шаблоны</h2>
-      <button>+ Создать новый шаблон</button>
+      <button onClick={() => setIsModalOpen(true)}>+ Создать новый шаблон</button>
 
       {isLoading && <p>Загрузка...</p>}
 
@@ -31,6 +33,11 @@ function UserPage() {
       ) : (
         !isLoading && <p>У вас еще нет созданных шаблонов.</p>
       )}
+
+      <CreateTemplateModal
+        isOpen={isModalOpen}
+        onRequestClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }
