@@ -8,7 +8,6 @@ import './App.css'
 
 
 
-// Защищенный компонент для дашборда
 function Dashboard() {
   const { user, logout } = useAuthStore();
   return (
@@ -19,7 +18,6 @@ function Dashboard() {
   );
 }
 
-// Компонент для защиты роутов
 function ProtectedRoute({ children }) {
     const token = useAuthStore((state) => state.token);
     return token ? children : <Navigate to="/login" />;
@@ -50,22 +48,3 @@ function App() {
 
 export default App;
 
-// function App() {
-//   const [templates, setTemplates] = useState([]);
-
-//   useEffect(() => {
-//     fetch('/api/templates')
-//       .then(res => res.json())
-//       .then(setTemplates);
-//   }, []);
-
-//   return (
-//     <>
-//       {templates.map(template => (
-//         <div key={template.id}>{template.title}</div>
-//       ))}
-//     </>
-//   )
-// }
-
-// export default App
