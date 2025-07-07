@@ -1,10 +1,6 @@
 {
-  "name": "forms-app",
-  "scripts": {
-    "start": "concurrently \"cd client && npm run dev\" \"cd server && node index.js\"",
-    "deploy-client": "cd client && npm run build"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  }
+  "name": "forms-app-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for the Forms App"
 }
