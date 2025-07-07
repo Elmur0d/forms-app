@@ -36,8 +36,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={token ? <Navigate to="/" /> : <LoginPage />} />
-        <Route path="/register" element={token ? <Navigate to="/" /> : <RegistrationPage />} />
+        <Route path="/login" element={token ? <Navigate to="/dashboard" /> : <LoginPage />} />
+        <Route path="/register" element={token ? <Navigate to="/dashboard" /> : <RegistrationPage />} />
         <Route
           path="/dashboard"
           element={
@@ -46,8 +46,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/" element={<Navigate to={token ? "/dashboard" : "/login"} />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<Navigate to={token ? "/dashboard" : "/login"} />} />
       </Routes>
     </BrowserRouter>
   );
