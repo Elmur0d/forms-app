@@ -2,18 +2,9 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage.jsx';
 import RegistrationPage from './pages/RegistrationPage.jsx';
+import UserPage from './pages/UserPage.jsx';
 import useAuthStore from './store/authStore.js';
 
-function Dashboard() {
-  const { user, logout } = useAuthStore();
-  return (
-    <div>
-      <h1>Добро пожаловать, {user?.name || user?.email}!</h1>
-      <p>Вы успешно вошли в систему.</p>
-      <button onClick={logout}>Выйти</button>
-    </div>
-  );
-}
 
 function ProtectedRoute({ children }) {
   const token = useAuthStore((state) => state.token);
@@ -30,7 +21,7 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <UserPage />
             </ProtectedRoute>
           }
         />
