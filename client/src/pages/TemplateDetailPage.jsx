@@ -29,8 +29,18 @@ function SortableQuestionItem({ question, handleDelete, handleEdit }) {
     <li ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <span>{question.title} ({question.type})</span>
       <div>
-        <button onClick={() => handleEdit(question)} style={{ color: 'lightblue', ... }}>Редактировать</button>
-        <button onClick={() => handleDelete(question.id)} style={{ color: 'red', ... }}>Удалить</button>
+        <button 
+          onClick={() => handleEdit(question)} 
+          style={{ color: 'lightblue', border: 'none', background: 'transparent', cursor: 'pointer', marginRight: '10px' }}
+        >
+          Редактировать
+        </button>
+        <button 
+          onClick={() => handleDelete(question.id)} 
+          style={{ color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}
+        >
+          Удалить
+        </button>
       </div>
     </li>
   );
