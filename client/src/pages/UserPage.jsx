@@ -29,7 +29,10 @@ function UserPage() {
         <ul>
           {myTemplates.map((template) => (
             <li key={template.id}>
-              <Link to={`/template/${template.id}`}>{template.title}</Link>
+                <Link to={`/template/${template.id}`}>{template.title}</Link>
+                <span style={{ marginLeft: '10px', fontSize: '0.8em', color: '#888' }}>
+                    ({template.topic})
+                </span>
             </li>
           ))}
         </ul>

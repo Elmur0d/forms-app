@@ -152,6 +152,7 @@ function TemplateDetailPage() {
             <hr/>
             <Link to="/dashboard">← Назад в личный кабинет</Link>
             <h1>{template.title}</h1>
+            <p><strong>Тема:</strong> {template.topic}</p>
             <p><strong>Описание:</strong> {template.description || 'Нет описания'}</p>
             <hr />
             

@@ -20,13 +20,15 @@ function CreateTemplateModal({ isOpen, onRequestClose }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const createTemplate = useTemplateStore((state) => state.createTemplate);
+  const [topic, setTopic] = useState('OTHER');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await createTemplate({ title, description });
+    const result = await createTemplate({ title, description, topic });
     if (result.success) {
       setTitle('');
       setDescription('');
+      setTopic('OTHER'); 
       onRequestClose(); 
     }
   };
@@ -54,6 +56,15 @@ function CreateTemplateModal({ isOpen, onRequestClose }) {
           onChange={(e) => setDescription(e.target.value)}
           style={{ width: '100%', height: '80px', marginBottom: '10px' }}
         />
+        <div style={{ marginTop: '10px', marginBottom: '10px' }}>
+          <label htmlFor="topic-select" style={{ marginRight: '10px' }}>Тема:</label>
+          <select id="topic-select" value={topic} onChange={(e) => setTopic(e.target.value)}>
+            <option value="EDUCATION">Образование</option>
+            <option value="QUIZ">Викторина</option>
+            <option value="POLL">Опрос</option>
+            <option value="OTHER">Другое</option>
+          </select>
+        </div>
         <button type="submit">Создать</button>
         <button type="button" onClick={onRequestClose} style={{ marginLeft: '10px' }}>
           Отмена
