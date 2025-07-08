@@ -8,8 +8,8 @@ import { CSS } from '@dnd-kit/utilities';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-// Компонент для элемента списка
-function SortableQuestionItem({ question, handleDelete }) {
+// Отдельный компонент для элемента списка
+function SortableQuestionItem({ question, handleDeleteQuestion }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: question.id });
 
   const style = {
@@ -30,7 +30,7 @@ function SortableQuestionItem({ question, handleDelete }) {
     <li ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <span>{question.title} ({question.type})</span>
       <button
-        onClick={() => handleDelete(question.id)}
+        onClick={() => handleDeleteQuestion(question.id)}
         style={{ color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}
       >
         Удалить
@@ -38,7 +38,6 @@ function SortableQuestionItem({ question, handleDelete }) {
     </li>
   );
 }
-
 
 // Основной компонент страницы
 function TemplateDetailPage() {
@@ -60,7 +59,6 @@ function TemplateDetailPage() {
             setTemplate({ ...response.data, questions: sortedQuestions });
         } catch (err) {
             setError('Не удалось загрузить шаблон или у вас нет доступа');
-            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -103,30 +101,26 @@ function TemplateDetailPage() {
 
     const handleDragEnd = (event) => {
         const { active, over } = event;
-        if (over && active.id !== over.id) {
-            const originalQuestions = template.questions;
-            const oldIndex = originalQuestions.findIndex((q) => q.id === active.id);
-            const newIndex = originalQuestions.findIndex((q) => q.id === over.id);
-            
-            // Создаем новый отсортированный массив
-            const reorderedQuestions = arrayMove(originalQuestions, oldIndex, newIndex);
-
-            // Обновляем UI немедленно
-            setTemplate(prev => ({ ...prev, questions: reorderedQuestions }));
-            
-            // Формируем массив ID для отправки
-            const orderedQuestionIds = reorderedQuestions.map(q => q.id);
-
-            // Асинхронно отправляем изменения на сервер
-            axios.put(`${API_URL}/api/questions/reorder`, 
-                { orderedQuestionIds },
-                { headers: { Authorization: `Bearer ${token}` } }
-            ).catch(err => {
-                // Если ошибка, откатываем UI и сообщаем пользователю
-                alert('Не удалось сохранить новый порядок.');
-                setTemplate(prev => ({ ...prev, questions: originalQuestions }));
-            });
+        if (!over || active.id === over.id) {
+            return;
         }
+
+        const originalQuestions = [...template.questions];
+        const oldIndex = originalQuestions.findIndex((q) => q.id === active.id);
+        const newIndex = originalQuestions.findIndex((q) => q.id === over.id);
+        const reorderedQuestions = arrayMove(originalQuestions, oldIndex, newIndex);
+
+        setTemplate(prev => ({ ...prev, questions: reorderedQuestions }));
+        
+        const orderedQuestionIds = reorderedQuestions.map(q => q.id);
+
+        axios.put(`${API_URL}/api/questions/reorder`, 
+            { orderedQuestionIds },
+            { headers: { Authorization: `Bearer ${token}` } }
+        ).catch(err => {
+            alert('Не удалось сохранить новый порядок.');
+            setTemplate(prev => ({ ...prev, questions: originalQuestions }));
+        });
     };
 
     if (loading) return <div>Загрузка...</div>;
@@ -137,7 +131,7 @@ function TemplateDetailPage() {
         acc[q.type] = (acc[q.type] || 0) + 1;
         return acc;
     }, {});
-    const isLimitReached = questionCounts[newQuestionType] >= 4;
+    const isLimitReached = !newQuestionType || questionCounts[newQuestionType] >= 4;
 
     return (
         <div>
@@ -153,6 +147,7 @@ function TemplateDetailPage() {
                     value={newQuestionTitle}
                     onChange={(e) => setNewQuestionTitle(e.target.value)}
                     placeholder="Текст вопроса"
+                    required
                 />
                 <select value={newQuestionType} onChange={(e) => setNewQuestionType(e.target.value)}>
                     <option value="single-line">Однострочный текст ({questionCounts['single-line'] || 0}/4)</option>
@@ -170,7 +165,7 @@ function TemplateDetailPage() {
                 <SortableContext items={template.questions} strategy={verticalListSortingStrategy}>
                     <ul style={{ listStyle: 'none', padding: 0 }}>
                         {template.questions.map((q) => (
-                            <SortableQuestionItem key={q.id} id={q.id} question={q} handleDelete={handleDeleteQuestion} />
+                            <SortableQuestionItem key={q.id} question={q} handleDeleteQuestion={handleDeleteQuestion} />
                         ))}
                     </ul>
                 </SortableContext>
