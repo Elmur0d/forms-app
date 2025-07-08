@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage.jsx';
 import RegistrationPage from './pages/RegistrationPage.jsx';
@@ -9,6 +9,7 @@ import useAuthStore from './store/authStore.js';
 import Navbar from './components/Navbar.jsx'; 
 import HomePage from './pages/HomePage.jsx'; 
 import SubmissionDetailPage from './pages/SubmissionDetailPage.jsx';
+import useThemeStore from './store/themeStore';
 
 
 function ProtectedRoute({ children }) {
@@ -17,6 +18,13 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
+  const theme = useThemeStore((state) => state.theme);
+
+  useEffect(() => {
+    document.body.className = theme;
+  }, [theme]);
+
+  
   return (
     <BrowserRouter>
       <Navbar />
