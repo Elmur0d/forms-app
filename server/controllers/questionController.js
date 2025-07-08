@@ -47,36 +47,47 @@ export const deleteQuestion = async (req, res) => {
 };
 
 export const reorderQuestions = async (req, res) => {
-    const { orderedQuestionIds } = req.body;
-    if (!orderedQuestionIds || !Array.isArray(orderedQuestionIds)) {
-      return res.status(400).json({ msg: 'Необходим массив ID' });
+  console.log('--- Received reorder request ---'); 
+  const { orderedQuestionIds } = req.body;
+  console.log('Received IDs:', orderedQuestionIds); 
+
+  if (!orderedQuestionIds || !Array.isArray(orderedQuestionIds)) {
+    return res.status(400).json({ msg: 'Необходим массив ID' });
+  }
+  if (orderedQuestionIds.length === 0) {
+    return res.status(200).json({ msg: 'Нет вопросов для сортировки' });
+  }
+  try {
+    console.log('Checking permissions...'); 
+    const firstQuestion = await prisma.question.findFirst({
+      where: { id: parseInt(orderedQuestionIds[0]) },
+      select: { template: { select: { authorId: true } } },
+    });
+
+    if (!firstQuestion) {
+      console.error('Permission check failed: First question not found.');
+      return res.status(404).json({ msg: 'Вопрос не найден' });
     }
-    if (orderedQuestionIds.length === 0) {
-      return res.status(200).json({ msg: 'Нет вопросов для сортировки' });
+    if (firstQuestion.template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
+      console.error('Permission check failed: User is not the author.');
+      return res.status(403).json({ msg: 'Действие запрещено' });
     }
-    try {
-      const firstQuestion = await prisma.question.findFirst({
-        where: { id: parseInt(orderedQuestionIds[0]) },
-        select: { template: { select: { authorId: true } } },
-      });
-      if (!firstQuestion) {
-        return res.status(404).json({ msg: 'Вопрос не найден' });
-      }
-      if (firstQuestion.template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
-        return res.status(403).json({ msg: 'Действие запрещено' });
-      }
-      const transaction = orderedQuestionIds.map((id, index) =>
-        prisma.question.update({
-          where: { id: parseInt(id) },
-          data: { order: index },
-        })
-      );
-      await prisma.$transaction(transaction);
-      res.status(200).json({ msg: 'Порядок вопросов успешно обновлен' });
-    } catch (error) {
-      console.error('Reorder failed:', error);
-      res.status(500).json({ msg: 'Ошибка на сервере при обновлении порядка' });
-    }
+
+    console.log('Permissions OK. Starting transaction...'); 
+    const transaction = orderedQuestionIds.map((id, index) =>
+      prisma.question.update({
+        where: { id: parseInt(id) },
+        data: { order: index },
+      })
+    );
+    await prisma.$transaction(transaction);
+    
+    console.log('Transaction successful.'); 
+    res.status(200).json({ msg: 'Порядок вопросов успешно обновлен' });
+  } catch (error) {
+    console.error('--- REORDER FAILED ---:', error); 
+    res.status(500).json({ msg: 'Ошибка на сервере при обновлении порядка' });
+  }
 };
 
 
