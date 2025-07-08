@@ -57,6 +57,7 @@ function TemplateDetailPage() {
     const [newQuestionTitle, setNewQuestionTitle] = useState('');
     const [newQuestionType, setNewQuestionType] = useState('single-line');
     const [editingQuestion, setEditingQuestion] = useState(null);
+    const [submissions, setSubmissions] = useState([]);
 
     const fetchTemplate = useCallback(async () => {
         try {
@@ -70,7 +71,18 @@ function TemplateDetailPage() {
         }
     }, [id, token]);
 
-    useEffect(() => { fetchTemplate(); }, [fetchTemplate]);
+    const fetchSubmissions = useCallback(async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/templates/${id}/forms`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setSubmissions(response.data);
+        } catch (err) {
+            console.error("Failed to fetch submissions:", err);
+        }
+    }, [id, token]);
+
+    useEffect(() => { fetchTemplate(); fetchSubmissions();}, [fetchTemplate, fetchSubmissions]);
 
     const handleAddQuestion = async (e) => {
         e.preventDefault();
@@ -155,6 +167,22 @@ function TemplateDetailPage() {
                 <button type="submit" disabled={isLimitReached}>{isLimitReached ? 'Лимит достигнут' : 'Добавить'}</button>
             </form>
             <hr />
+
+            <h2>Результаты ({submissions.length})</h2>
+            {submissions.length > 0 ? (
+                <ul>
+                {submissions.map(sub => (
+                    <li key={sub.id}>
+                    Заполнено пользователем: <strong>{sub.user.name || sub.user.email}</strong> 
+                    {' в '} 
+                    {new Date(sub.createdAt).toLocaleString()}
+                    </li>
+                ))}
+                </ul>
+            ) : (
+                <p>Эту форму еще никто не заполнял.</p>
+            )}
+
             <h2>Вопросы:</h2>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={template.questions.map(q => q.id)} strategy={verticalListSortingStrategy}>

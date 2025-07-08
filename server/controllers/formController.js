@@ -29,3 +29,40 @@ export const submitForm = async (req, res) => {
     res.status(500).json({ msg: 'Ошибка при отправке формы' });
   }
 };
+
+export const getSubmissionsForTemplate = async (req, res) => {
+  const { templateId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const template = await prisma.template.findFirst({
+      where: {
+        id: parseInt(templateId),
+        authorId: userId,
+      },
+    });
+
+    if (!template) {
+      return res.status(403).json({ msg: 'Доступ запрещен или шаблон не найден' });
+    }
+
+    const submissions = await prisma.form.findMany({
+      where: { templateId: parseInt(templateId) },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { 
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    res.json(submissions);
+  } catch (error) {
+    console.error('Failed to get submissions:', error);
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};
