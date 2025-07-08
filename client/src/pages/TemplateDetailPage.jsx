@@ -134,6 +134,10 @@ function TemplateDetailPage() {
 
     return (
         <div>
+            <a href={`/form/${template.id}`} target="_blank" rel="noopener noreferrer">
+                Открыть публичную ссылку
+            </a>
+            <hr/>
             <Link to="/dashboard">← Назад в личный кабинет</Link>
             <h1>{template.title}</h1>
             <p><strong>Описание:</strong> {template.description || 'Нет описания'}</p>

@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegistrationPage from './pages/RegistrationPage.jsx';
 import UserPage from './pages/UserPage.jsx';
 import TemplateDetailPage from './pages/TemplateDetailPage.jsx';
+import PublicFormPage from './pages/PublicFormPage.jsx';
 import useAuthStore from './store/authStore.js';
 
 
@@ -34,6 +35,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/form/:id" element={<PublicFormPage />} />
         <Route path="/" element={<Navigate to="/dashboard" />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
