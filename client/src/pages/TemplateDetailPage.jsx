@@ -48,18 +48,6 @@ function TemplateDetailPage() {
     const [newQuestionTitle, setNewQuestionTitle] = useState('');
     const [newQuestionType, setNewQuestionType] = useState('single-line');
 
-    const handleTestPut = async () => {
-        try {
-            const response = await axios.put(`${API_URL}/api/test`, 
-                { test: 'data' }, // отправляем какие-нибудь данные
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            alert('Тестовый запрос прошел успешно!');
-            console.log(response.data);
-        } catch (error) {
-            alert('Тестовый запрос провалился. Проверьте логи.');
-        }
-    };
 
     const fetchTemplate = useCallback(async () => {
         try {
@@ -131,10 +119,6 @@ function TemplateDetailPage() {
 
     return (
         <div>
-            <button onClick={handleTestPut} style={{backgroundColor: 'orange'}}>
-                Запустить тест PUT
-            </button>
-            <hr/>
             <Link to="/dashboard">← Назад в личный кабинет</Link>
             <h1>{template.title}</h1>
             <p><strong>Описание:</strong> {template.description || 'Нет описания'}</p>

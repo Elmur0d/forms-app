@@ -47,33 +47,36 @@ export const deleteQuestion = async (req, res) => {
 };
 
 export const reorderQuestions = async (req, res) => {
-  console.log('--- Received reorder request ---'); 
   const { orderedQuestionIds } = req.body;
-  console.log('Received IDs:', orderedQuestionIds); 
 
   if (!orderedQuestionIds || !Array.isArray(orderedQuestionIds)) {
     return res.status(400).json({ msg: 'Необходим массив ID' });
   }
+
   if (orderedQuestionIds.length === 0) {
     return res.status(200).json({ msg: 'Нет вопросов для сортировки' });
   }
+
   try {
-    console.log('Checking permissions...'); 
-    const firstQuestion = await prisma.question.findFirst({
+    // Находим шаблон, которому принадлежат эти вопросы
+    const firstQuestion = await prisma.question.findUnique({
       where: { id: parseInt(orderedQuestionIds[0]) },
-      select: { template: { select: { authorId: true } } },
     });
 
     if (!firstQuestion) {
-      console.error('Permission check failed: First question not found.');
       return res.status(404).json({ msg: 'Вопрос не найден' });
     }
-    if (firstQuestion.template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
-      console.error('Permission check failed: User is not the author.');
+
+    const template = await prisma.template.findUnique({
+      where: { id: firstQuestion.templateId },
+    });
+
+    // Проверяем права доступа
+    if (template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
       return res.status(403).json({ msg: 'Действие запрещено' });
     }
 
-    console.log('Permissions OK. Starting transaction...'); 
+    // Обновляем порядок
     const transaction = orderedQuestionIds.map((id, index) =>
       prisma.question.update({
         where: { id: parseInt(id) },
@@ -82,10 +85,9 @@ export const reorderQuestions = async (req, res) => {
     );
     await prisma.$transaction(transaction);
     
-    console.log('Transaction successful.'); 
     res.status(200).json({ msg: 'Порядок вопросов успешно обновлен' });
   } catch (error) {
-    console.error('--- REORDER FAILED ---:', error); 
+    console.error('Reorder failed:', error);
     res.status(500).json({ msg: 'Ошибка на сервере при обновлении порядка' });
   }
 };
