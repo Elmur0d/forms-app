@@ -8,8 +8,10 @@ import { CSS } from '@dnd-kit/utilities';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-function SortableQuestionItem({ question, handleDeleteQuestion }) {
+// Отдельный компонент для элемента списка
+function SortableQuestionItem({ question, handleDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: question.id });
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -17,6 +19,7 @@ function SortableQuestionItem({ question, handleDeleteQuestion }) {
     padding: '10px',
     border: '1px solid #555',
     backgroundColor: '#444',
+    color: 'white',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -26,7 +29,7 @@ function SortableQuestionItem({ question, handleDeleteQuestion }) {
     <li ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <span>{question.title} ({question.type})</span>
       <button
-        onClick={() => handleDeleteQuestion(question.id)}
+        onClick={() => handleDelete(question.id)}
         style={{ color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}
       >
         Удалить
@@ -35,6 +38,7 @@ function SortableQuestionItem({ question, handleDeleteQuestion }) {
   );
 }
 
+// Основной компонент страницы
 function TemplateDetailPage() {
     const { id } = useParams();
     const [template, setTemplate] = useState(null);
@@ -45,11 +49,14 @@ function TemplateDetailPage() {
     const [newQuestionType, setNewQuestionType] = useState('single-line');
 
     const fetchTemplate = useCallback(async () => {
+        setLoading(true);
         try {
             const response = await axios.get(`${API_URL}/api/templates/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setTemplate(response.data);
+            // Сортируем вопросы по полю order при получении
+            const sortedQuestions = response.data.questions.sort((a, b) => a.order - b.order);
+            setTemplate({ ...response.data, questions: sortedQuestions });
         } catch (err) {
             setError('Не удалось загрузить шаблон или у вас нет доступа');
         } finally {
@@ -93,23 +100,28 @@ function TemplateDetailPage() {
     const sensors = useSensors(useSensor(PointerSensor));
     const handleDragEnd = async (event) => {
         const { active, over } = event;
-        if (active.id !== over.id) {
-            const oldIndex = template.questions.findIndex((q) => q.id === active.id);
-            const newIndex = template.questions.findIndex((q) => q.id === over.id);
-            const reorderedQuestions = arrayMove(template.questions, oldIndex, newIndex);
+        if (!over || active.id === over.id) return;
+
+        setTemplate((prev) => {
+            if (!prev) return null;
+            const oldIndex = prev.questions.findIndex((q) => q.id === active.id);
+            const newIndex = prev.questions.findIndex((q) => q.id === over.id);
+            return { ...prev, questions: arrayMove(prev.questions, oldIndex, newIndex) };
+        });
             
-            setTemplate({ ...template, questions: reorderedQuestions });
-            
-            const orderedQuestionIds = reorderedQuestions.map(q => q.id);
-            try {
-                await axios.put(`${API_URL}/api/questions/reorder`, 
-                    { orderedQuestionIds },
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-            } catch (err) {
-                alert('Не удалось сохранить новый порядок. Страница будет обновлена.');
-                fetchTemplate();
-            }
+        const orderedQuestionIds = arrayMove(template.questions, 
+            template.questions.findIndex(q => q.id === active.id), 
+            template.questions.findIndex(q => q.id === over.id)
+        ).map(q => q.id);
+
+        try {
+            await axios.put(`${API_URL}/api/questions/reorder`, 
+                { orderedQuestionIds },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+        } catch (err) {
+            alert('Не удалось сохранить новый порядок. Страница будет обновлена.');
+            fetchTemplate();
         }
     };
 
@@ -154,7 +166,7 @@ function TemplateDetailPage() {
                 <SortableContext items={template.questions} strategy={verticalListSortingStrategy}>
                     <ul style={{ listStyle: 'none', padding: 0 }}>
                         {template.questions.map((q) => (
-                            <SortableQuestionItem key={q.id} question={q} handleDeleteQuestion={handleDeleteQuestion} />
+                            <SortableQuestionItem key={q.id} question={q} handleDelete={handleDeleteQuestion} />
                         ))}
                     </ul>
                 </SortableContext>
