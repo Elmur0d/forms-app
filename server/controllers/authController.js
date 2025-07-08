@@ -5,9 +5,6 @@ import { validationResult } from 'express-validator';
 
 const prisma = new PrismaClient();
 
-// @route   POST api/auth/register
-// @desc    Register a user
-// @access  Public
 export const register = async (req, res) => {
 
   const errors = validationResult(req);
@@ -38,10 +35,6 @@ export const register = async (req, res) => {
       },
     });
     
-    // 4. Создаем и возвращаем JWT токен (пока закомментируем, сделаем в логине)
-    // const payload = { user: { id: user.id, role: user.role } };
-    // const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' });
-    // res.json({ token });
 
     res.status(201).json({ msg: 'Пользователь успешно зарегистрирован', userId: user.id });
 
@@ -53,9 +46,6 @@ export const register = async (req, res) => {
 
 
 
-// @route   POST api/auth/login
-// @desc    Authenticate user & get token
-// @access  Public
 export const login = async (req, res) => {
   
   const errors = validationResult(req);
@@ -103,12 +93,6 @@ export const login = async (req, res) => {
   }
 };
 
-// ...в самом конце файла authController.js
-
-// @route   GET api/auth/me
-// @desc    Get current logged in user
-// @access  Private
 export const getMe = async (req, res) => {
-  // req.user был добавлен нашим middleware protect
   res.status(200).json(req.user);
 };
