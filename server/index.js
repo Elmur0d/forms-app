@@ -10,6 +10,11 @@ app.use(cors());
 
 app.use(express.json());
 
+app.put('/api/test', (req, res) => {
+  console.log('--- TEST PUT REQUEST RECEIVED! ---');
+  res.status(200).json({ message: 'Test PUT request was successful!' });
+});
+
 app.get('/api', (req, res) => {
   res.send('Hello from Server!');
 });
