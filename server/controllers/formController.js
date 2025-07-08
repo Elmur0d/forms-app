@@ -66,3 +66,37 @@ export const getSubmissionsForTemplate = async (req, res) => {
     res.status(500).json({ msg: 'Ошибка сервера' });
   }
 };
+
+export const getFormById = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const form = await prisma.form.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        user: { select: { name: true, email: true } }, 
+        template: { 
+          include: {
+            author: { select: { name: true, email: true } }, 
+            questions: { orderBy: { order: 'asc' } }, 
+          },
+        },
+        answers: true, 
+      },
+    });
+
+    if (!form) {
+      return res.status(404).json({ msg: 'Заполненная форма не найдена' });
+    }
+
+    if (form.userId !== userId && form.template.authorId !== userId && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ msg: 'Доступ запрещен' });
+    }
+
+    res.json(form);
+  } catch (error) {
+    console.error('Get form by ID failed:', error);
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};

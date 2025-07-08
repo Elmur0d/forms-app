@@ -8,6 +8,7 @@ import PublicFormPage from './pages/PublicFormPage.jsx';
 import useAuthStore from './store/authStore.js';
 import Navbar from './components/Navbar.jsx'; 
 import HomePage from './pages/HomePage.jsx'; 
+import SubmissionDetailPage from './pages/SubmissionDetailPage.jsx';
 
 
 function ProtectedRoute({ children }) {
@@ -25,9 +26,9 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegistrationPage />} />
           <Route path="/form/:id" element={<PublicFormPage />} />
-          
           <Route path="/dashboard" element={<ProtectedRoute><UserPage /></ProtectedRoute>} />
           <Route path="/template/:id" element={<ProtectedRoute><TemplateDetailPage /></ProtectedRoute>} />
+          <Route path="/submission/:id" element={<ProtectedRoute><SubmissionDetailPage /></ProtectedRoute>} />
           
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

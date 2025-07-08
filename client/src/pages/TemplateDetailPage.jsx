@@ -173,9 +173,11 @@ function TemplateDetailPage() {
                 <ul>
                 {submissions.map(sub => (
                     <li key={sub.id}>
-                    Заполнено пользователем: <strong>{sub.user.name || sub.user.email}</strong> 
-                    {' в '} 
-                    {new Date(sub.createdAt).toLocaleString()}
+                        <Link to={`/submission/${sub.id}`}>
+                        Заполнено пользователем: <strong>{sub.user.name || sub.user.email}</strong> 
+                        {' в '} 
+                        {new Date(sub.createdAt).toLocaleString()}
+                        </Link>
                     </li>
                 ))}
                 </ul>
