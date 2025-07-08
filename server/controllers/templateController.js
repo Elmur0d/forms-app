@@ -1,9 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-// @route   POST /api/templates
-// @desc    Create a new template
-// @access  Private
 export const createTemplate = async (req, res) => {
   const { title, description, topic, isPublic } = req.body;
   
@@ -28,9 +25,6 @@ export const createTemplate = async (req, res) => {
   }
 };
 
-// @route   GET /api/templates
-// @desc    Get all public templates
-// @access  Public
 export const getTemplates = async (req, res) => {
   try {
     const templates = await prisma.template.findMany({
@@ -49,9 +43,6 @@ export const getTemplates = async (req, res) => {
   }
 };
 
-// @route   GET /api/templates/my
-// @desc    Get all templates for the logged-in user
-// @access  Private
 export const getMyTemplates = async (req, res) => {
   try {
     const templates = await prisma.template.findMany({
@@ -66,16 +57,17 @@ export const getMyTemplates = async (req, res) => {
 };
 
 
-// @route   GET /api/templates/:id
-// @desc    Get a single template by ID
-// @access  Public (with checks)
 export const getTemplateById = async (req, res) => {
+  const { id } = req.params;
   try {
     const template = await prisma.template.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: { id: parseInt(id) },
       include: {
-        author: { select: { name: true } },
-        questions: { orderBy: { order: 'asc' } }, 
+        questions: {
+          orderBy: {
+            order: 'asc', 
+          },
+        },
       },
     });
 
@@ -83,19 +75,16 @@ export const getTemplateById = async (req, res) => {
       return res.status(404).json({ msg: 'Шаблон не найден' });
     }
 
-    if (!template.isPublic && (!req.user || (template.authorId !== req.user.id && req.user.role !== 'ADMIN'))) {
-        return res.status(403).json({ msg: 'Доступ запрещен' });
+    if (template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ msg: 'Доступ запрещен' });
     }
-    
+
     res.json(template);
   } catch (error) {
     res.status(500).json({ msg: 'Ошибка сервера' });
   }
 };
 
-// @route   PUT /api/templates/:id
-// @desc    Update a template
-// @access  Private
 export const updateTemplate = async (req, res) => {
   try {
     let template = await prisma.template.findUnique({
@@ -122,9 +111,6 @@ export const updateTemplate = async (req, res) => {
   }
 };
 
-// @route   DELETE /api/templates/:id
-// @desc    Delete a template
-// @access  Private
 export const deleteTemplate = async (req, res) => {
   try {
     const template = await prisma.template.findUnique({
