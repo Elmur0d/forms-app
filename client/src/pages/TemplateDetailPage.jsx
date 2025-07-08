@@ -2,10 +2,10 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
-import EditQuestionModal from '../components/EditQuestionModal';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import EditQuestionModal from '../components/EditQuestionModal'; 
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -29,14 +29,16 @@ function SortableQuestionItem({ question, handleDelete, handleEdit }) {
     <li ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <span>{question.title} ({question.type})</span>
       <div>
-        <button 
-          onClick={() => handleEdit(question)} 
+        <button
+          onPointerDown={(e) => e.stopPropagation()} 
+          onClick={() => handleEdit(question)}
           style={{ color: 'lightblue', border: 'none', background: 'transparent', cursor: 'pointer', marginRight: '10px' }}
         >
           Редактировать
         </button>
-        <button 
-          onClick={() => handleDelete(question.id)} 
+        <button
+          onPointerDown={(e) => e.stopPropagation()} 
+          onClick={() => handleDelete(question.id)}
           style={{ color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}
         >
           Удалить
@@ -56,37 +58,19 @@ function TemplateDetailPage() {
     const [newQuestionType, setNewQuestionType] = useState('single-line');
     const [editingQuestion, setEditingQuestion] = useState(null);
 
-
-    const handleUpdateQuestion = async (questionId, updatedData) => {
-        try {
-                await axios.put(`${API_URL}/api/questions/${questionId}`, updatedData, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setEditingQuestion(null); 
-            fetchTemplate(); 
-            } catch (err) {
-            alert('Не удалось обновить вопрос');
-        }
-    };
-
-
     const fetchTemplate = useCallback(async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/templates/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await axios.get(`${API_URL}/api/templates/${id}`, { headers: { Authorization: `Bearer ${token}` } });
             const sortedQuestions = response.data.questions.sort((a, b) => a.order - b.order);
             setTemplate({ ...response.data, questions: sortedQuestions });
         } catch (err) {
-            setError('Не удалось загрузить шаблон или у вас нет доступа');
+            setError('Не удалось загрузить шаблон');
         } finally {
             setLoading(false);
         }
     }, [id, token]);
 
-    useEffect(() => {
-        fetchTemplate();
-    }, [fetchTemplate]);
+    useEffect(() => { fetchTemplate(); }, [fetchTemplate]);
 
     const handleAddQuestion = async (e) => {
         e.preventDefault();
@@ -101,7 +85,7 @@ function TemplateDetailPage() {
     };
 
     const handleDeleteQuestion = async (questionId) => {
-        if (window.confirm('Вы уверены, что хотите удалить этот вопрос?')) {
+        if (window.confirm('Вы уверены?')) {
             try {
                 await axios.delete(`${API_URL}/api/questions/${questionId}`, { headers: { Authorization: `Bearer ${token}` } });
                 fetchTemplate();
@@ -109,6 +93,16 @@ function TemplateDetailPage() {
                 alert('Не удалось удалить вопрос');
             }
         }
+    };
+
+    const handleUpdateQuestion = async (questionId, updatedData) => {
+      try {
+        await axios.put(`${API_URL}/api/questions/${questionId}`, updatedData, { headers: { Authorization: `Bearer ${token}` } });
+        setEditingQuestion(null);
+        fetchTemplate();
+      } catch (err) {
+        alert('Не удалось обновить вопрос');
+      }
     };
     
     const sensors = useSensors(useSensor(PointerSensor));
@@ -125,7 +119,7 @@ function TemplateDetailPage() {
         
         const orderedQuestionIds = reorderedQuestions.map(q => q.id);
         axios.put(`${API_URL}/api/questions/reorder`, { orderedQuestionIds }, { headers: { Authorization: `Bearer ${token}` } })
-            .catch(err => {
+            .catch(() => {
                 alert('Не удалось сохранить новый порядок.');
                 setTemplate(prev => ({ ...prev, questions: originalQuestions }));
             });
@@ -168,7 +162,7 @@ function TemplateDetailPage() {
                 </SortableContext>
             </DndContext>
             {template.questions.length === 0 && <p>В этом шаблоне еще нет вопросов.</p>}
-
+            
             <EditQuestionModal
                 isOpen={!!editingQuestion}
                 onRequestClose={() => setEditingQuestion(null)}
