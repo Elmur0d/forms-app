@@ -63,9 +63,10 @@ export const getTemplateById = async (req, res) => {
     const template = await prisma.template.findUnique({
       where: { id: parseInt(id) },
       include: {
+        author: { select: { name: true } },
         questions: {
           orderBy: {
-            order: 'asc', 
+            order: 'asc',
           },
         },
       },
@@ -75,12 +76,19 @@ export const getTemplateById = async (req, res) => {
       return res.status(404).json({ msg: 'Шаблон не найден' });
     }
 
-    if (template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ msg: 'Доступ запрещен' });
+    if (!template.isPublic) {
+      if (!req.user) {
+        return res.status(403).json({ msg: 'Доступ запрещен' });
+      }
+      if (template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
+        return res.status(403).json({ msg: 'Доступ запрещен' });
+      }
     }
 
     res.json(template);
+
   } catch (error) {
+    console.error('Get Template By Id Error:', error);
     res.status(500).json({ msg: 'Ошибка сервера' });
   }
 };
