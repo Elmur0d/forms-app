@@ -39,11 +39,13 @@ function SortableQuestionItem({ question, handleDelete }) {
   );
 }
 
+
 // Основной компонент страницы
 function TemplateDetailPage() {
     const { id } = useParams();
     const [template, setTemplate] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const token = useAuthStore((state) => state.token);
     const [newQuestionTitle, setNewQuestionTitle] = useState('');
     const [newQuestionType, setNewQuestionType] = useState('single-line');
@@ -57,6 +59,7 @@ function TemplateDetailPage() {
             const sortedQuestions = response.data.questions.sort((a, b) => a.order - b.order);
             setTemplate({ ...response.data, questions: sortedQuestions });
         } catch (err) {
+            setError('Не удалось загрузить шаблон или у вас нет доступа');
             console.error(err);
         } finally {
             setLoading(false);
@@ -98,37 +101,36 @@ function TemplateDetailPage() {
     
     const sensors = useSensors(useSensor(PointerSensor));
 
-    const handleDragEnd = async (event) => {
+    const handleDragEnd = (event) => {
         const { active, over } = event;
-        if (!over || active.id === over.id) return;
-
-        // Сохраняем текущий порядок перед обновлением
-        const originalQuestions = template.questions;
-
-        const oldIndex = originalQuestions.findIndex((q) => q.id === active.id);
-        const newIndex = originalQuestions.findIndex((q) => q.id === over.id);
-        const reorderedQuestions = arrayMove(originalQuestions, oldIndex, newIndex);
-
-        // 1. Оптимистичное обновление UI
-        setTemplate(prev => ({ ...prev, questions: reorderedQuestions }));
+        if (over && active.id !== over.id) {
+            const originalQuestions = template.questions;
+            const oldIndex = originalQuestions.findIndex((q) => q.id === active.id);
+            const newIndex = originalQuestions.findIndex((q) => q.id === over.id);
             
-        // 2. Формируем массив ID для отправки на сервер
-        const orderedQuestionIds = reorderedQuestions.map(q => q.id);
+            // Создаем новый отсортированный массив
+            const reorderedQuestions = arrayMove(originalQuestions, oldIndex, newIndex);
 
-        try {
-            // 3. Отправляем запрос
-            await axios.put(`${API_URL}/api/questions/reorder`, 
+            // Обновляем UI немедленно
+            setTemplate(prev => ({ ...prev, questions: reorderedQuestions }));
+            
+            // Формируем массив ID для отправки
+            const orderedQuestionIds = reorderedQuestions.map(q => q.id);
+
+            // Асинхронно отправляем изменения на сервер
+            axios.put(`${API_URL}/api/questions/reorder`, 
                 { orderedQuestionIds },
                 { headers: { Authorization: `Bearer ${token}` } }
-            );
-        } catch (err) {
-            alert('Не удалось сохранить новый порядок. Возвращаем исходный порядок.');
-            // В случае ошибки возвращаем исходный порядок в UI
-            setTemplate(prev => ({ ...prev, questions: originalQuestions }));
+            ).catch(err => {
+                // Если ошибка, откатываем UI и сообщаем пользователю
+                alert('Не удалось сохранить новый порядок.');
+                setTemplate(prev => ({ ...prev, questions: originalQuestions }));
+            });
         }
     };
 
     if (loading) return <div>Загрузка...</div>;
+    if (error) return <div>Ошибка: {error}</div>;
     if (!template) return <div>Шаблон не найден.</div>;
     
     const questionCounts = template.questions.reduce((acc, q) => {
@@ -168,7 +170,7 @@ function TemplateDetailPage() {
                 <SortableContext items={template.questions} strategy={verticalListSortingStrategy}>
                     <ul style={{ listStyle: 'none', padding: 0 }}>
                         {template.questions.map((q) => (
-                            <SortableQuestionItem key={q.id} question={q} handleDelete={handleDeleteQuestion} />
+                            <SortableQuestionItem key={q.id} id={q.id} question={q} handleDelete={handleDeleteQuestion} />
                         ))}
                     </ul>
                 </SortableContext>
