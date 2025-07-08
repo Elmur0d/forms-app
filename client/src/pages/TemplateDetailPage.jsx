@@ -8,7 +8,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-// Отдельный компонент для элемента списка
+// Компонент для элемента списка
 function SortableQuestionItem({ question, handleDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: question.id });
 
@@ -23,6 +23,7 @@ function SortableQuestionItem({ question, handleDelete }) {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    cursor: 'grab',
   };
 
   return (
@@ -43,7 +44,6 @@ function TemplateDetailPage() {
     const { id } = useParams();
     const [template, setTemplate] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const token = useAuthStore((state) => state.token);
     const [newQuestionTitle, setNewQuestionTitle] = useState('');
     const [newQuestionType, setNewQuestionType] = useState('single-line');
@@ -54,11 +54,10 @@ function TemplateDetailPage() {
             const response = await axios.get(`${API_URL}/api/templates/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            // Сортируем вопросы по полю order при получении
             const sortedQuestions = response.data.questions.sort((a, b) => a.order - b.order);
             setTemplate({ ...response.data, questions: sortedQuestions });
         } catch (err) {
-            setError('Не удалось загрузить шаблон или у вас нет доступа');
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -98,35 +97,38 @@ function TemplateDetailPage() {
     };
     
     const sensors = useSensors(useSensor(PointerSensor));
+
     const handleDragEnd = async (event) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
-        setTemplate((prev) => {
-            if (!prev) return null;
-            const oldIndex = prev.questions.findIndex((q) => q.id === active.id);
-            const newIndex = prev.questions.findIndex((q) => q.id === over.id);
-            return { ...prev, questions: arrayMove(prev.questions, oldIndex, newIndex) };
-        });
+        // Сохраняем текущий порядок перед обновлением
+        const originalQuestions = template.questions;
+
+        const oldIndex = originalQuestions.findIndex((q) => q.id === active.id);
+        const newIndex = originalQuestions.findIndex((q) => q.id === over.id);
+        const reorderedQuestions = arrayMove(originalQuestions, oldIndex, newIndex);
+
+        // 1. Оптимистичное обновление UI
+        setTemplate(prev => ({ ...prev, questions: reorderedQuestions }));
             
-        const orderedQuestionIds = arrayMove(template.questions, 
-            template.questions.findIndex(q => q.id === active.id), 
-            template.questions.findIndex(q => q.id === over.id)
-        ).map(q => q.id);
+        // 2. Формируем массив ID для отправки на сервер
+        const orderedQuestionIds = reorderedQuestions.map(q => q.id);
 
         try {
+            // 3. Отправляем запрос
             await axios.put(`${API_URL}/api/questions/reorder`, 
                 { orderedQuestionIds },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
         } catch (err) {
-            alert('Не удалось сохранить новый порядок. Страница будет обновлена.');
-            fetchTemplate();
+            alert('Не удалось сохранить новый порядок. Возвращаем исходный порядок.');
+            // В случае ошибки возвращаем исходный порядок в UI
+            setTemplate(prev => ({ ...prev, questions: originalQuestions }));
         }
     };
 
     if (loading) return <div>Загрузка...</div>;
-    if (error) return <div>Ошибка: {error}</div>;
     if (!template) return <div>Шаблон не найден.</div>;
     
     const questionCounts = template.questions.reduce((acc, q) => {
