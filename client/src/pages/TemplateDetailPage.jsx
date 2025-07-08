@@ -2,13 +2,14 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
+import EditQuestionModal from '../components/EditQuestionModal';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-function SortableQuestionItem({ question, handleDelete }) {
+function SortableQuestionItem({ question, handleDelete, handleEdit }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: question.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -27,14 +28,10 @@ function SortableQuestionItem({ question, handleDelete }) {
   return (
     <li ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <span>{question.title} ({question.type})</span>
-      {/* Добавляем onPointerDown, чтобы клик не конфликтовал с перетаскиванием */}
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => handleDelete(question.id)}
-        style={{ color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}
-      >
-        Удалить
-      </button>
+      <div>
+        <button onClick={() => handleEdit(question)} style={{ color: 'lightblue', ... }}>Редактировать</button>
+        <button onClick={() => handleDelete(question.id)} style={{ color: 'red', ... }}>Удалить</button>
+      </div>
     </li>
   );
 }
@@ -47,6 +44,20 @@ function TemplateDetailPage() {
     const token = useAuthStore((state) => state.token);
     const [newQuestionTitle, setNewQuestionTitle] = useState('');
     const [newQuestionType, setNewQuestionType] = useState('single-line');
+    const [editingQuestion, setEditingQuestion] = useState(null);
+
+
+    const handleUpdateQuestion = async (questionId, updatedData) => {
+        try {
+                await axios.put(`${API_URL}/api/questions/${questionId}`, updatedData, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setEditingQuestion(null); 
+            fetchTemplate(); 
+            } catch (err) {
+            alert('Не удалось обновить вопрос');
+        }
+    };
 
 
     const fetchTemplate = useCallback(async () => {
@@ -141,12 +152,19 @@ function TemplateDetailPage() {
                 <SortableContext items={template.questions.map(q => q.id)} strategy={verticalListSortingStrategy}>
                     <ul style={{ listStyle: 'none', padding: 0 }}>
                         {template.questions.map((q) => (
-                            <SortableQuestionItem key={q.id} question={q} handleDelete={handleDeleteQuestion} />
+                            <SortableQuestionItem key={q.id} question={q} handleDelete={handleDeleteQuestion} handleEdit={setEditingQuestion} />
                         ))}
                     </ul>
                 </SortableContext>
             </DndContext>
             {template.questions.length === 0 && <p>В этом шаблоне еще нет вопросов.</p>}
+
+            <EditQuestionModal
+                isOpen={!!editingQuestion}
+                onRequestClose={() => setEditingQuestion(null)}
+                question={editingQuestion}
+                onUpdate={handleUpdateQuestion}
+            />
         </div>
     );
 }
