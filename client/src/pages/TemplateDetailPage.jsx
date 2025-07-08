@@ -9,7 +9,7 @@ import { CSS } from '@dnd-kit/utilities';
 const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // Отдельный компонент для элемента списка
-function SortableQuestionItem({ question, handleDeleteQuestion }) {
+function SortableQuestionItem({ question, handleDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: question.id });
 
   const style = {
@@ -30,7 +30,7 @@ function SortableQuestionItem({ question, handleDeleteQuestion }) {
     <li ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <span>{question.title} ({question.type})</span>
       <button
-        onClick={() => handleDeleteQuestion(question.id)}
+        onClick={() => handleDelete(question.id)}
         style={{ color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}
       >
         Удалить
@@ -59,6 +59,7 @@ function TemplateDetailPage() {
             setTemplate({ ...response.data, questions: sortedQuestions });
         } catch (err) {
             setError('Не удалось загрузить шаблон или у вас нет доступа');
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -101,26 +102,24 @@ function TemplateDetailPage() {
 
     const handleDragEnd = (event) => {
         const { active, over } = event;
-        if (!over || active.id === over.id) {
-            return;
+        if (over && active.id !== over.id) {
+            const originalQuestions = template.questions;
+            const oldIndex = originalQuestions.findIndex((q) => q.id === active.id);
+            const newIndex = originalQuestions.findIndex((q) => q.id === over.id);
+            const reorderedQuestions = arrayMove(originalQuestions, oldIndex, newIndex);
+
+            setTemplate(prev => ({ ...prev, questions: reorderedQuestions }));
+            
+            const orderedQuestionIds = reorderedQuestions.map(q => q.id);
+
+            axios.put(`${API_URL}/api/questions/reorder`, 
+                { orderedQuestionIds },
+                { headers: { Authorization: `Bearer ${token}` } }
+            ).catch(err => {
+                alert('Не удалось сохранить новый порядок.');
+                setTemplate(prev => ({ ...prev, questions: originalQuestions }));
+            });
         }
-
-        const originalQuestions = [...template.questions];
-        const oldIndex = originalQuestions.findIndex((q) => q.id === active.id);
-        const newIndex = originalQuestions.findIndex((q) => q.id === over.id);
-        const reorderedQuestions = arrayMove(originalQuestions, oldIndex, newIndex);
-
-        setTemplate(prev => ({ ...prev, questions: reorderedQuestions }));
-        
-        const orderedQuestionIds = reorderedQuestions.map(q => q.id);
-
-        axios.put(`${API_URL}/api/questions/reorder`, 
-            { orderedQuestionIds },
-            { headers: { Authorization: `Bearer ${token}` } }
-        ).catch(err => {
-            alert('Не удалось сохранить новый порядок.');
-            setTemplate(prev => ({ ...prev, questions: originalQuestions }));
-        });
     };
 
     if (loading) return <div>Загрузка...</div>;
@@ -165,7 +164,7 @@ function TemplateDetailPage() {
                 <SortableContext items={template.questions} strategy={verticalListSortingStrategy}>
                     <ul style={{ listStyle: 'none', padding: 0 }}>
                         {template.questions.map((q) => (
-                            <SortableQuestionItem key={q.id} question={q} handleDeleteQuestion={handleDeleteQuestion} />
+                            <SortableQuestionItem key={q.id} question={q} handleDelete={handleDeleteQuestion} />
                         ))}
                     </ul>
                 </SortableContext>
