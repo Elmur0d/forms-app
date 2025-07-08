@@ -8,10 +8,8 @@ import { CSS } from '@dnd-kit/utilities';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-// Отдельный компонент для элемента списка
 function SortableQuestionItem({ question, handleDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: question.id });
-
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -29,7 +27,9 @@ function SortableQuestionItem({ question, handleDelete }) {
   return (
     <li ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <span>{question.title} ({question.type})</span>
+      {/* Добавляем onPointerDown, чтобы клик не конфликтовал с перетаскиванием */}
       <button
+        onPointerDown={(e) => e.stopPropagation()}
         onClick={() => handleDelete(question.id)}
         style={{ color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}
       >
@@ -39,7 +39,6 @@ function SortableQuestionItem({ question, handleDelete }) {
   );
 }
 
-// Основной компонент страницы
 function TemplateDetailPage() {
     const { id } = useParams();
     const [template, setTemplate] = useState(null);
@@ -50,7 +49,6 @@ function TemplateDetailPage() {
     const [newQuestionType, setNewQuestionType] = useState('single-line');
 
     const fetchTemplate = useCallback(async () => {
-        setLoading(true);
         try {
             const response = await axios.get(`${API_URL}/api/templates/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -59,7 +57,6 @@ function TemplateDetailPage() {
             setTemplate({ ...response.data, questions: sortedQuestions });
         } catch (err) {
             setError('Не удалось загрузить шаблон или у вас нет доступа');
-            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -73,11 +70,7 @@ function TemplateDetailPage() {
         e.preventDefault();
         if (!newQuestionTitle) return;
         try {
-            await axios.post(
-                `${API_URL}/api/templates/${id}/questions`,
-                { title: newQuestionTitle, type: newQuestionType },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await axios.post(`${API_URL}/api/templates/${id}/questions`, { title: newQuestionTitle, type: newQuestionType }, { headers: { Authorization: `Bearer ${token}` } });
             setNewQuestionTitle('');
             fetchTemplate();
         } catch (err) {
@@ -88,9 +81,7 @@ function TemplateDetailPage() {
     const handleDeleteQuestion = async (questionId) => {
         if (window.confirm('Вы уверены, что хотите удалить этот вопрос?')) {
             try {
-                await axios.delete(`${API_URL}/api/questions/${questionId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                await axios.delete(`${API_URL}/api/questions/${questionId}`, { headers: { Authorization: `Bearer ${token}` } });
                 fetchTemplate();
             } catch (err) {
                 alert('Не удалось удалить вопрос');
@@ -102,34 +93,27 @@ function TemplateDetailPage() {
 
     const handleDragEnd = (event) => {
         const { active, over } = event;
-        if (over && active.id !== over.id) {
-            const originalQuestions = template.questions;
-            const oldIndex = originalQuestions.findIndex((q) => q.id === active.id);
-            const newIndex = originalQuestions.findIndex((q) => q.id === over.id);
-            const reorderedQuestions = arrayMove(originalQuestions, oldIndex, newIndex);
+        if (!over || active.id === over.id) return;
 
-            setTemplate(prev => ({ ...prev, questions: reorderedQuestions }));
-            
-            const orderedQuestionIds = reorderedQuestions.map(q => q.id);
-
-            axios.put(`${API_URL}/api/questions/reorder`, 
-                { orderedQuestionIds },
-                { headers: { Authorization: `Bearer ${token}` } }
-            ).catch(err => {
+        const originalQuestions = template.questions;
+        const oldIndex = originalQuestions.findIndex((q) => q.id === active.id);
+        const newIndex = originalQuestions.findIndex((q) => q.id === over.id);
+        const reorderedQuestions = arrayMove(originalQuestions, oldIndex, newIndex);
+        setTemplate(prev => ({ ...prev, questions: reorderedQuestions }));
+        
+        const orderedQuestionIds = reorderedQuestions.map(q => q.id);
+        axios.put(`${API_URL}/api/questions/reorder`, { orderedQuestionIds }, { headers: { Authorization: `Bearer ${token}` } })
+            .catch(err => {
                 alert('Не удалось сохранить новый порядок.');
                 setTemplate(prev => ({ ...prev, questions: originalQuestions }));
             });
-        }
     };
 
     if (loading) return <div>Загрузка...</div>;
     if (error) return <div>Ошибка: {error}</div>;
     if (!template) return <div>Шаблон не найден.</div>;
     
-    const questionCounts = template.questions.reduce((acc, q) => {
-        acc[q.type] = (acc[q.type] || 0) + 1;
-        return acc;
-    }, {});
+    const questionCounts = template.questions.reduce((acc, q) => ({ ...acc, [q.type]: (acc[q.type] || 0) + 1 }), {});
     const isLimitReached = !newQuestionType || questionCounts[newQuestionType] >= 4;
 
     return (
@@ -141,27 +125,19 @@ function TemplateDetailPage() {
             
             <form onSubmit={handleAddQuestion}>
                 <h3>Добавить новый вопрос</h3>
-                <input
-                    type="text"
-                    value={newQuestionTitle}
-                    onChange={(e) => setNewQuestionTitle(e.target.value)}
-                    placeholder="Текст вопроса"
-                    required
-                />
+                <input type="text" value={newQuestionTitle} onChange={(e) => setNewQuestionTitle(e.target.value)} placeholder="Текст вопроса" required />
                 <select value={newQuestionType} onChange={(e) => setNewQuestionType(e.target.value)}>
                     <option value="single-line">Однострочный текст ({questionCounts['single-line'] || 0}/4)</option>
                     <option value="multi-line">Многострочный текст ({questionCounts['multi-line'] || 0}/4)</option>
                     <option value="integer">Число ({questionCounts['integer'] || 0}/4)</option>
                     <option value="checkbox">Чекбокс ({questionCounts['checkbox'] || 0}/4)</option>
                 </select>
-                <button type="submit" disabled={isLimitReached}>
-                    {isLimitReached ? 'Лимит достигнут' : 'Добавить'}
-                </button>
+                <button type="submit" disabled={isLimitReached}>{isLimitReached ? 'Лимит достигнут' : 'Добавить'}</button>
             </form>
             <hr />
             <h2>Вопросы:</h2>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={template.questions} strategy={verticalListSortingStrategy}>
+                <SortableContext items={template.questions.map(q => q.id)} strategy={verticalListSortingStrategy}>
                     <ul style={{ listStyle: 'none', padding: 0 }}>
                         {template.questions.map((q) => (
                             <SortableQuestionItem key={q.id} question={q} handleDelete={handleDeleteQuestion} />
