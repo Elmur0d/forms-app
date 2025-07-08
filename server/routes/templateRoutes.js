@@ -1,5 +1,5 @@
 import express from 'express';
-import { createTemplate, getMyTemplates, getTemplates, getTemplateById, updateTemplate, deleteTemplate } from '../controllers/templateController.js';
+import { createTemplate, getMyTemplates, getTemplates, getTemplateById, updateTemplate, deleteTemplate, getPopularTemplates } from '../controllers/templateController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { addQuestion } from '../controllers/questionController.js';
 import { getSubmissionsForTemplate } from '../controllers/formController.js';
@@ -14,6 +14,8 @@ const optionalProtect = (req, res, next) => {
 const router = express.Router();
 
 router.route('/').get(getTemplates).post(protect, createTemplate);
+
+router.route('/popular').get(getPopularTemplates);
 
 router.route('/my').get(protect, getMyTemplates);
 

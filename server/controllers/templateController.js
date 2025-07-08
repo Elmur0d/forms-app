@@ -146,3 +146,27 @@ export const deleteTemplate = async (req, res) => {
     res.status(500).json({ msg: 'Ошибка сервера' });
   }
 };
+
+export const getPopularTemplates = async (req, res) => {
+  try {
+    const popularTemplates = await prisma.template.findMany({
+      where: { isPublic: true },
+      include: {
+        _count: { 
+          select: { forms: true }, 
+        },
+        author: { select: { name: true } },
+      },
+      orderBy: {
+        forms: {
+          _count: 'desc', 
+        },
+      },
+      take: 5, 
+    });
+    res.json(popularTemplates);
+  } catch (error) {
+    console.error('Get popular templates failed:', error);
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};
