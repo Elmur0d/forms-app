@@ -152,10 +152,19 @@ function TemplateDetailPage() {
             <hr/>
             <Link to="/dashboard">← Назад в личный кабинет</Link>
             <h1>{template.title}</h1>
+
             <p><strong>Тема:</strong> {template.topic}</p>
             <p><strong>Описание:</strong> {template.description || 'Нет описания'}</p>
             <hr />
-            
+            {template.tags && template.tags.length > 0 && (
+                <div style={{ marginBottom: '10px' }}>
+                    {template.tags.map(tag => (
+                        <span key={tag.id} style={{ background: '#555', padding: '2px 8px', borderRadius: '12px', marginRight: '5px' }}>
+                            {tag.name}
+                        </span>
+                    ))}
+                </div>
+            )}
             <form onSubmit={handleAddQuestion}>
                 <h3>Добавить новый вопрос</h3>
                 <input type="text" value={newQuestionTitle} onChange={(e) => setNewQuestionTitle(e.target.value)} placeholder="Текст вопроса" required />

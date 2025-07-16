@@ -2,13 +2,22 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export const createTemplate = async (req, res) => {
-  const { title, description, topic, isPublic } = req.body;
+  const { title, description, topic, isPublic, tags } = req.body;
   
   if (!title) {
     return res.status(400).json({ msg: 'Пожалуйста, укажите заголовок' });
   }
 
   try {
+
+    const tagOperations = tags?.map(tagName => {
+        return {
+            where: { name: tagName.toLowerCase() },
+            create: { name: tagName.toLowerCase() },
+        };
+    }) || [];
+
+
     const newTemplate = await prisma.template.create({
       data: {
         title,
@@ -16,6 +25,9 @@ export const createTemplate = async (req, res) => {
         topic,
         isPublic,
         authorId: req.user.id, 
+        tags: { 
+          connectOrCreate: tagOperations,
+        },
       },
     });
     res.status(201).json(newTemplate);
@@ -69,6 +81,7 @@ export const getTemplateById = async (req, res) => {
             order: 'asc',
           },
         },
+        tags: true,
       },
     });
 

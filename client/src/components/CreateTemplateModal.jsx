@@ -21,14 +21,17 @@ function CreateTemplateModal({ isOpen, onRequestClose }) {
   const [description, setDescription] = useState('');
   const createTemplate = useTemplateStore((state) => state.createTemplate);
   const [topic, setTopic] = useState('OTHER');
+  const [tags, setTags] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const tagsArray = tags.split(',').map(tag => tag.trim()).filter(Boolean);
     const result = await createTemplate({ title, description, topic });
     if (result.success) {
       setTitle('');
       setDescription('');
       setTopic('OTHER'); 
+      setTags('');
       onRequestClose(); 
     }
   };
@@ -64,6 +67,16 @@ function CreateTemplateModal({ isOpen, onRequestClose }) {
             <option value="POLL">Опрос</option>
             <option value="OTHER">Другое</option>
           </select>
+        </div>
+        <div style={{ marginTop: '10px', marginBottom: '10px' }}>
+          <label style={{ display: 'block', marginBottom: '5px' }}>Теги (через запятую)</label>
+          <input
+            type="text"
+            placeholder="например, работа, опрос, hr"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            style={{ width: '100%' }}
+          />
         </div>
         <button type="submit">Создать</button>
         <button type="button" onClick={onRequestClose} style={{ marginLeft: '10px' }}>
