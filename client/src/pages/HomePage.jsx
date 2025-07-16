@@ -24,6 +24,7 @@ function HomePage() {
   const [latestTemplates, setLatestTemplates] = useState([]);
   const [popularTemplates, setPopularTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [tags, setTags] = useState([]);
 
   useEffect(() => {
     const fetchAllTemplates = async () => {
@@ -32,9 +33,11 @@ function HomePage() {
         const [latestRes, popularRes] = await Promise.all([
           axios.get(`${API_URL}/api/templates`),
           axios.get(`${API_URL}/api/templates/popular`),
+          axios.get(`${API_URL}/api/tags`),
         ]);
         setLatestTemplates(latestRes.data);
         setPopularTemplates(popularRes.data);
+        setTags(tagsRes.data);
       } catch (error) {
         console.error("Failed to fetch templates:", error);
       } finally {
@@ -48,6 +51,18 @@ function HomePage() {
     <div style={{ padding: '20px' }}>
       <h1>Добро пожаловать в FormsApp!</h1>
       <p>Здесь вы можете найти и заполнить формы, созданные другими пользователями.</p>
+
+      <hr style={{margin: '2rem 0'}}/>
+      <h2>Облако тегов</h2>
+      {tags.length > 0 ? (
+        <div>
+          {tags.map(tag => (
+            <Link to={`/search?tag=${tag.name}`} key={tag.id} style={{ marginRight: '10px', fontSize: `${0.8 + tag._count.templates * 0.2}rem`}}>
+              {tag.name}
+            </Link>
+          ))}
+        </div>
+      ) : <p>Тегов пока нет.</p>}
       
       <hr style={{margin: '2rem 0'}}/>
 

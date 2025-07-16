@@ -7,15 +7,17 @@ const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 function SearchResultsPage() {
   const [searchParams] = useSearchParams();
   const term = searchParams.get('term');
+  const tag = searchParams.get('tag');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!term) return;
+    const query = term ? `term=${term}` : `tag=${tag}`;
+    if (!term && !tag) return;
     const fetchResults = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`${API_URL}/api/search?term=${term}`);
+        const response = await axios.get(`${API_URL}/api/search?${query}`);
         setResults(response.data);
       } catch (error) {
         console.error("Search failed:", error);
@@ -24,11 +26,16 @@ function SearchResultsPage() {
       }
     };
     fetchResults();
-  }, [term]);
+  }, [term, tag]);
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Результаты поиска по запросу: "{term}"</h1>
+      <h1>
+        {tag 
+          ? `Шаблоны с тегом: "${tag}"` 
+          : `Результаты поиска по запросу: "${term}"`
+        }
+      </h1>
       {loading ? (
         <p>Идет поиск...</p>
       ) : results.length > 0 ? (
