@@ -4,6 +4,7 @@ import authRoutes from './routes/auth.js';
 import templateRoutes from './routes/templateRoutes.js';
 import questionRoutes from './routes/questionRoutes.js';
 import formRoutes from './routes/formRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/forms', formRoutes);
+app.use('/api/search', searchRoutes);
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}`));

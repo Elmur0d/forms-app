@@ -10,6 +10,7 @@ import Navbar from './components/Navbar.jsx';
 import HomePage from './pages/HomePage.jsx'; 
 import SubmissionDetailPage from './pages/SubmissionDetailPage.jsx';
 import useThemeStore from './store/themeStore';
+import SearchResultsPage from './pages/SearchResultsPage.jsx';
 
 
 function ProtectedRoute({ children }) {
@@ -37,7 +38,7 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><UserPage /></ProtectedRoute>} />
           <Route path="/template/:id" element={<ProtectedRoute><TemplateDetailPage /></ProtectedRoute>} />
           <Route path="/submission/:id" element={<ProtectedRoute><SubmissionDetailPage /></ProtectedRoute>} />
-          
+          <Route path="/search" element={<SearchResultsPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

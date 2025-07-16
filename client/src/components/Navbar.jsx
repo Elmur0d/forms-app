@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
 import HelpTicketModal from './HelpTicketModal'; 
+import SearchBar from './SearchBar';
 
 function Navbar() {
   const { user, logout } = useAuthStore();
@@ -15,6 +16,7 @@ function Navbar() {
         <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: '1.5rem' }}>
           FormsApp
         </Link>
+        <SearchBar />
         <div>
           <button onClick={() => setHelpModalOpen(true)} style={{ marginRight: '1rem' }}>
             Помощь
