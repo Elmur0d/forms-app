@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import Modal from 'react-modal';
+import axios from 'axios'; 
+import useAuthStore from '../store/authStore';
+
+const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 const customStyles = {
   content: {
@@ -24,16 +28,34 @@ Modal.setAppElement('#root');
 function HelpTicketModal({ isOpen, onRequestClose }) {
   const [summary, setSummary] = useState('');
   const [priority, setPriority] = useState('Average');
+  const token = useAuthStore((state) => state.token);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({
-      summary,
-      priority,
-      page: window.location.href, 
-    });
-    alert('Тикет создан (пока только в консоли)!');
-    onRequestClose();
+    try {
+      const response = await axios.post(`${API_URL}/api/tickets`, 
+        {
+          summary,
+          priority,
+          pageLink: window.location.href,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      alert(response.data.message);
+      onRequestClose();
+    } catch (error) {
+      alert('Не удалось отправить тикет.');
+      console.error(error);
+    }
+    // console.log({
+    //   summary,
+    //   priority,
+    //   page: window.location.href, 
+    // });
+    // alert('Тикет создан (пока только в консоли)!');
+    // onRequestClose();
   };
 
   return (
