@@ -14,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@azure/msal-node": "^3.6.3",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@prisma/client": "^6.11.1",
     "bcryptjs": "^3.0.2",

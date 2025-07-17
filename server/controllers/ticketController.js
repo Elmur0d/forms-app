@@ -1,8 +1,23 @@
+import { ConfidentialClientApplication } from '@azure/msal-node';
 import { Client } from '@microsoft/microsoft-graph-client';
 import 'isomorphic-fetch';
 
+const msalConfig = {
+    auth: {
+        clientId: process.env.ONEDRIVE_CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${process.env.TENANT_ID}`,
+        clientSecret: process.env.ONEDRIVE_CLIENT_SECRET,
+    }
+};
+
+const cca = new ConfidentialClientApplication(msalConfig);
+
 const getAccessToken = async () => {
-    return "dummy_access_token"; 
+    const tokenRequest = {
+        scopes: ['https://graph.microsoft.com/.default'],
+    };
+    const response = await cca.acquireTokenByClientCredential(tokenRequest);
+    return response.accessToken;
 };
 
 export const createHelpTicket = async (req, res) => {
@@ -18,23 +33,23 @@ export const createHelpTicket = async (req, res) => {
         adminEmails: [process.env.ADMIN_EMAIL]
     };
 
-    const fileName = `ticket-${Date.now()}.json`;
+    const fileName = `ticket-${Date.now()}-${user.id}.json`;
     const fileContent = JSON.stringify(ticketData, null, 2);
 
     try {
-        // --- Логика загрузки в OneDrive будет здесь ---
-        // const accessToken = await getAccessToken();
-        // const client = Client.init({ authProvider: (done) => done(null, accessToken) });
-        // await client.api(`/me/drive/root:/${fileName}:/content`).put(fileContent);
+        const accessToken = await getAccessToken();
+        const client = Client.init({
+            authProvider: (done) => {
+                done(null, accessToken);
+            },
+        });
 
-        console.log('--- TICKET CREATED (JSON) ---');
-        console.log(fileContent);
-        console.log('-----------------------------');
+        const response = await client.api(`/me/drive/root:/HelpTickets/${fileName}:/content`).put(fileContent);
 
-        res.status(200).json({ message: 'Тикет успешно создан и (пока что) выведен в консоль сервера.' });
+        res.status(201).json({ message: 'Тикет успешно создан и загружен в OneDrive.', url: response.webUrl });
 
     } catch (error) {
-        console.error('Failed to create ticket:', error);
-        res.status(500).json({ msg: 'Ошибка при создании тикета' });
+        console.error('Failed to upload to OneDrive:', error.message);
+        res.status(500).json({ msg: 'Ошибка при загрузке файла в OneDrive' });
     }
 };
