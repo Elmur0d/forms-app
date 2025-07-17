@@ -44,7 +44,9 @@ export const createHelpTicket = async (req, res) => {
             },
         });
 
-        const response = await client.api(`/me/drive/root:/HelpTickets/${fileName}:/content`).put(fileContent);
+        const userId = process.env.AZURE_USER_ID;
+        const uploadUrl = `/users/${userId}/drive/root:/HelpTickets/${fileName}:/content`;
+        const response = await client.api(uploadUrl).put(fileContent);
 
         res.status(201).json({ message: 'Тикет успешно создан и загружен в OneDrive.', url: response.webUrl });
 
