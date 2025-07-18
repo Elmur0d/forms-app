@@ -11,11 +11,20 @@ import HomePage from './pages/HomePage.jsx';
 import SubmissionDetailPage from './pages/SubmissionDetailPage.jsx';
 import useThemeStore from './store/themeStore';
 import SearchResultsPage from './pages/SearchResultsPage.jsx';
+import AdminPage from './pages/AdminPage.jsx';
 
 
 function ProtectedRoute({ children }) {
   const token = useAuthStore((state) => state.token);
   return token ? children : <Navigate to="/login" />;
+}
+
+function AdminProtectedRoute({ children }) {
+    const { user } = useAuthStore();
+    if (!user || user.role !== 'ADMIN') {
+        return <Navigate to="/" />; /
+    }
+    return children;
 }
 
 function App() {
@@ -38,6 +47,7 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><UserPage /></ProtectedRoute>} />
           <Route path="/template/:id" element={<ProtectedRoute><TemplateDetailPage /></ProtectedRoute>} />
           <Route path="/submission/:id" element={<ProtectedRoute><SubmissionDetailPage /></ProtectedRoute>} />
+          <Route path="/admin" element={<AdminProtectedRoute><AdminPage /></AdminProtectedRoute>} />
           <Route path="/search" element={<SearchResultsPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
