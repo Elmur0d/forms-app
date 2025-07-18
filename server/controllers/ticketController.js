@@ -4,37 +4,27 @@ export const createHelpTicket = async (req, res) => {
     const { summary, priority, pageLink } = req.body;
     const user = req.user;
 
-    const ticketData = {
-        reportedBy: user.email,
-        link: pageLink,
-        priority: priority,
-        summary: summary,
-        adminEmails: [process.env.ADMIN_EMAIL]
+    
+    const discordMessage = {
+        content: `**Новый тикет поддержки!**`,
+        embeds: [{
+            title: summary,
+            color: priority === 'High' ? 15158332 : (priority === 'Average' ? 15844367 : 3066993),
+            fields: [
+                { name: 'Приоритет', value: priority, inline: true },
+                { name: 'Отправитель', value: user.email, inline: true },
+                { name: 'Ссылка на страницу', value: pageLink },
+            ],
+            timestamp: new Date().toISOString(),
+        }],
     };
 
-    const fileName = `ticket-${Date.now()}.json`;
-    const fileContent = JSON.stringify(ticketData, null, 2);
-
     try {
-        const dropboxApiArgs = {
-            path: `/HelpTickets/${fileName}`, 
-            mode: 'add',
-            autorename: true,
-            mute: false
-        };
-
-        await axios.post('https://content.dropboxapi.com/2/files/upload', fileContent, {
-            headers: {
-                'Authorization': `Bearer ${process.env.DROPBOX_ACCESS_TOKEN}`,
-                'Dropbox-API-Arg': JSON.stringify(dropboxApiArgs),
-                'Content-Type': 'application/octet-stream',
-            },
-        });
-
-        res.status(201).json({ message: 'Тикет успешно создан и загружен в Dropbox.' });
-
+       
+        await axios.post(process.env.DISCORD_WEBHOOK_URL, discordMessage);
+        res.status(201).json({ message: 'Тикет успешно отправлен в Discord.' });
     } catch (error) {
-        console.error('Failed to upload to Dropbox:', error.response ? error.response.data : error.message);
-        res.status(500).json({ msg: 'Ошибка при загрузке файла в Dropbox' });
+        console.error('Failed to send to Discord:', error);
+        res.status(500).json({ msg: 'Ошибка при отправке уведомления в Discord' });
     }
 };
