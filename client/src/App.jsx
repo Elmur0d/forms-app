@@ -47,7 +47,14 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><UserPage /></ProtectedRoute>} />
           <Route path="/template/:id" element={<ProtectedRoute><TemplateDetailPage /></ProtectedRoute>} />
           <Route path="/submission/:id" element={<ProtectedRoute><SubmissionDetailPage /></ProtectedRoute>} />
-          <Route path="/admin" element={<AdminProtectedRoute><AdminPage /></AdminProtectedRoute>} />
+          <Route
+            path="/admin"
+            element={
+              <AdminProtectedRoute>
+                <AdminPage />
+              </AdminProtectedRoute>
+            }
+          />
           <Route path="/search" element={<SearchResultsPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
