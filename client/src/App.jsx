@@ -22,7 +22,7 @@ function ProtectedRoute({ children }) {
 function AdminProtectedRoute({ children }) {
     const { user } = useAuthStore();
     if (!user || user.role !== 'ADMIN') {
-        return <Navigate to="/" />; /
+        return <Navigate to="/" />; 
     }
     return children;
 }
