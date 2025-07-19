@@ -50,6 +50,7 @@ function TemplateDetailPage() {
     const [allowedUsers, setAllowedUsers] = useState([]);
     const [userSearchTerm, setUserSearchTerm] = useState('');
     const [userSearchResults, setUserSearchResults] = useState([]);
+    const [stats, setStats] = useState([]);
 
     const fetchTemplate = useCallback(async () => {
         try {
@@ -72,10 +73,22 @@ function TemplateDetailPage() {
         }
     }, [id, token]);
 
+    const fetchStats = useCallback(async () => {
+    try {
+      const { data } = await axios.get(`${API_URL}/api/templates/${id}/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setStats(data);
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
+    }
+  }, [id, token]);
+
     useEffect(() => {
         fetchTemplate();
         fetchSubmissions();
-    }, [fetchTemplate, fetchSubmissions]);
+        fetchStats(); 
+    }, [fetchTemplate, fetchSubmissions, fetchStats]);
 
     useEffect(() => {
         if (userSearchTerm.length < 2) {
@@ -213,6 +226,25 @@ function TemplateDetailPage() {
                 <button type="submit" disabled={isLimitReached}>{isLimitReached ? 'Лимит достигнут' : 'Добавить'}</button>
             </form>
             <hr />
+
+            <hr/>
+            <h2>Статистика ответов</h2>
+            {stats.length > 0 ? (
+                stats.map(stat => (
+                <div key={stat.id} style={{ border: '1px solid #555', padding: '10px', marginBottom: '10px' }}>
+                    <h4>{stat.title}</h4>
+                    <p>Всего ответов: {stat.totalAnswers}</p>
+                    {stat.type === 'integer' && <p>Среднее значение: {stat.avg.toFixed(2)}</p>}
+                    {(stat.type === 'single-line' || stat.type === 'multi-line') && (
+                    <div>
+                        <p>Топ-3 популярных ответа:</p>
+                        <ol>{stat.popular.map(([ans, count]) => <li key={ans}>{ans} ({count} раз)</li>)}</ol>
+                    </div>
+                    )}
+                </div>
+                ))
+            ) : <p>Статистика пока недоступна.</p>}
+            <hr/>
 
             <h2>Результаты ({submissions.length})</h2>
             {submissions.length > 0 ? (

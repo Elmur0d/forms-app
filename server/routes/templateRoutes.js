@@ -3,6 +3,7 @@ import { createTemplate, getMyTemplates, getTemplates, getTemplateById, updateTe
 import { protect } from '../middleware/authMiddleware.js';
 import { addQuestion } from '../controllers/questionController.js';
 import { getSubmissionsForTemplate } from '../controllers/formController.js';
+import { getTemplateStats } from '../controllers/templateController.js';
 
 const optionalProtect = (req, res, next) => {
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -27,5 +28,6 @@ router
 
 router.route('/:templateId/questions').post(protect, addQuestion);
 router.route('/:templateId/forms').get(protect, getSubmissionsForTemplate);
+router.route('/:id/stats').get(protect, getTemplateStats);
 
 export default router;

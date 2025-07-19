@@ -205,3 +205,50 @@ export const getPopularTemplates = async (req, res) => {
     res.status(500).json({ msg: 'Ошибка сервера' });
   }
 };
+
+export const getTemplateStats = async (req, res) => {
+  try {
+    const templateId = parseInt(req.params.id);
+    const template = await prisma.template.findUnique({
+      where: { id: templateId },
+      include: {
+        questions: {
+          include: {
+            answers: {
+              select: { value: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!template || (template.authorId !== req.user.id && req.user.role !== 'ADMIN')) {
+      return res.status(403).json({ msg: 'Доступ запрещен' });
+    }
+
+    const stats = template.questions.map(q => {
+      const questionStat = { id: q.id, title: q.title, type: q.type, totalAnswers: q.answers.length };
+
+      if (q.type === 'integer') {
+        const numbers = q.answers.map(a => Number(a.value)).filter(n => !isNaN(n));
+        questionStat.sum = numbers.reduce((sum, val) => sum + val, 0);
+        questionStat.avg = numbers.length > 0 ? questionStat.sum / numbers.length : 0;
+      }
+
+      if (q.type === 'single-line' || q.type === 'multi-line') {
+        const counts = q.answers.reduce((acc, a) => {
+          acc[a.value] = (acc[a.value] || 0) + 1;
+          return acc;
+        }, {});
+        questionStat.popular = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+      }
+
+      return questionStat;
+    });
+
+    res.json(stats);
+  } catch (error) {
+    console.error("Get stats failed:", error);
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};
