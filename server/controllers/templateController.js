@@ -107,13 +107,15 @@ export const getTemplateById = async (req, res) => {
 };
 
 export const updateTemplate = async (req, res) => {
+  console.log('--- UPDATE TEMPLATE REQUEST RECEIVED ---');
   try {
     const templateId = parseInt(req.params.id);
     const { title, description, topic, isPublic, allowedUserIds } = req.body;
+    
+    console.log('Request Body:', req.body);
 
     const template = await prisma.template.findUnique({
       where: { id: templateId },
-      include: { allowedUsers: true }, 
     });
 
     if (!template) {
@@ -121,7 +123,7 @@ export const updateTemplate = async (req, res) => {
     }
 
     if (template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ msg: 'Действие запрещено' }); 
+      return res.status(403).json({ msg: 'Действие запрещено' });
     }
 
     const dataToUpdate = {};
@@ -132,19 +134,23 @@ export const updateTemplate = async (req, res) => {
 
     if (allowedUserIds !== undefined) {
       dataToUpdate.allowedUsers = {
-        set: allowedUserIds.map(id => ({ id: parseInt(id) })),
+        set: allowedUserIds.map(id => ({ id: id })),
       };
     }
+    
+    console.log('Data prepared for Prisma:', JSON.stringify(dataToUpdate, null, 2));
 
     const updatedTemplate = await prisma.template.update({
       where: { id: templateId },
       data: dataToUpdate,
     });
     
+    console.log('--- TEMPLATE SUCCESSFULLY UPDATED ---');
     res.json(updatedTemplate);
+
   } catch (error) {
-    console.error("Update template failed:", error);
-    res.status(500).json({ msg: 'Ошибка сервера' });
+    console.error("--- UPDATE TEMPLATE FAILED ---:", error);
+    res.status(500).json({ msg: 'Ошибка на сервере при обновлении шаблона' });
   }
 };
 
