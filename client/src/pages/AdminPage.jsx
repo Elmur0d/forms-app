@@ -51,6 +51,17 @@ function AdminPage() {
     }
   };
 
+  const handleToggleBlock = async (userId) => {
+    try {
+        await axios.put(`${API_URL}/api/users/${userId}/toggle-block`, {}, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        fetchUsers();
+    } catch (error) {
+        alert('Не удалось изменить статус блокировки');
+    }
+  };
+
   if (loading) return <div>Загрузка пользователей...</div>;
 
   return (
@@ -73,10 +84,14 @@ function AdminPage() {
               <td style={{ padding: '8px', borderBottom: '1px solid #444' }}>{user.name}</td>
               <td style={{ padding: '8px', borderBottom: '1px solid #444' }}>{user.email}</td>
               <td style={{ padding: '8px', borderBottom: '1px solid #444' }}>{user.role}</td>
+              <td>{user.isBlocked ? 'Заблокирован' : 'Активен'}</td>
               <td style={{ padding: '8px', borderBottom: '1px solid #444' }}>
                 
                 {adminUser.id !== user.id && (
                   <>
+                    <button onClick={() => handleToggleBlock(user.id)} style={{ marginRight: '10px' }}>
+                        {user.isBlocked ? 'Разблокировать' : 'Заблокировать'}
+                    </button>
                     <button onClick={() => handleToggleAdmin(user.id)} style={{ marginRight: '10px' }}>
                       {user.role === 'ADMIN' ? 'Убрать админа' : 'Сделать админом'}
                     </button>

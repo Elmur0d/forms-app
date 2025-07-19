@@ -23,6 +23,7 @@ model User {
   allowedTemplates Template[] @relation("TemplateAccess")
   likes     Like[]
   comments  Comment[]
+  isBlocked Boolean  @default(false)
 }
 
 model Template {

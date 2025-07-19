@@ -63,6 +63,10 @@ export const login = async (req, res) => {
       return res.status(400).json({ msg: 'Неверные учетные данные' });
     }
 
+    if (user.isBlocked) {
+        return res.status(403).json({ msg: 'Ваш аккаунт заблокирован' });
+    }
+
     
     const isMatch = await bcrypt.compare(password, user.password);
 

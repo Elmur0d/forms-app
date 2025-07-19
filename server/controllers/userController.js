@@ -75,3 +75,20 @@ export const searchUsers = async (req, res) => {
     res.status(500).json({ msg: 'Ошибка сервера' });
   }
 };
+
+export const toggleBlock = async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({ where: { id: parseInt(req.params.id) } });
+        if (!user) return res.status(404).json({ msg: 'Пользователь не найден' });
+        if (user.id === req.user.id) {
+            return res.status(400).json({ msg: 'Вы не можете заблокировать самого себя' });
+        }
+        const updatedUser = await prisma.user.update({
+            where: { id: user.id },
+            data: { isBlocked: !user.isBlocked },
+        });
+        res.json(updatedUser);
+    } catch (error) {
+        res.status(500).json({ msg: 'Ошибка сервера' });
+    }
+};
