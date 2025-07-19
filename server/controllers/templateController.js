@@ -120,7 +120,7 @@ export const updateTemplate = async (req, res) => {
     }
 
     if (template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ msg: 'Действие запрещено' });
+      return res.status(43).json({ msg: 'Действие запрещено' });
     }
 
     const dataToUpdate = {};
