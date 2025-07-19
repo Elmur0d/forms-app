@@ -113,6 +113,7 @@ export const updateTemplate = async (req, res) => {
 
     const template = await prisma.template.findUnique({
       where: { id: templateId },
+      include: { allowedUsers: true }, 
     });
 
     if (!template) {
@@ -120,7 +121,7 @@ export const updateTemplate = async (req, res) => {
     }
 
     if (template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
-      return res.status(43).json({ msg: 'Действие запрещено' });
+      return res.status(403).json({ msg: 'Действие запрещено' }); 
     }
 
     const dataToUpdate = {};
@@ -131,7 +132,7 @@ export const updateTemplate = async (req, res) => {
 
     if (allowedUserIds !== undefined) {
       dataToUpdate.allowedUsers = {
-        set: allowedUserIds.map(id => ({ id: id })),
+        set: allowedUserIds.map(id => ({ id: parseInt(id) })),
       };
     }
 
