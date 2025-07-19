@@ -250,3 +250,24 @@ export const getTemplateStats = async (req, res) => {
     res.status(500).json({ msg: 'Ошибка сервера' });
   }
 };
+
+export const getSharedWithMeTemplates = async (req, res) => {
+  try {
+    const templates = await prisma.template.findMany({
+      where: {
+        isPublic: false,
+        allowedUsers: { 
+          some: {
+            id: req.user.id, 
+          },
+        },
+      },
+      include: {
+        author: { select: { name: true } },
+      },
+    });
+    res.json(templates);
+  } catch (error) {
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};
