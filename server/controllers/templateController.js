@@ -108,8 +108,11 @@ export const getTemplateById = async (req, res) => {
 
 export const updateTemplate = async (req, res) => {
   try {
-    let template = await prisma.template.findUnique({
-      where: { id: parseInt(req.params.id) },
+    const templateId = parseInt(req.params.id);
+    const { title, description, topic, isPublic, allowedUserIds } = req.body;
+
+    const template = await prisma.template.findUnique({
+      where: { id: templateId },
     });
 
     if (!template) {
@@ -120,14 +123,22 @@ export const updateTemplate = async (req, res) => {
       return res.status(403).json({ msg: 'Действие запрещено' });
     }
 
-    const { title, description, topic, isPublic } = req.body;
     const updatedTemplate = await prisma.template.update({
-      where: { id: parseInt(req.params.id) },
-      data: { title, description, topic, isPublic },
+      where: { id: templateId },
+      data: {
+        title,
+        description,
+        topic,
+        isPublic,
+        allowedUsers: {
+          set: allowedUserIds ? allowedUserIds.map(id => ({ id: id })) : [],
+        },
+      },
     });
     
     res.json(updatedTemplate);
   } catch (error) {
+    console.error("Update template failed:", error);
     res.status(500).json({ msg: 'Ошибка сервера' });
   }
 };

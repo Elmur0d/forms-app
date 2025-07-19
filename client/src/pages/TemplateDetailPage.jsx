@@ -59,13 +59,18 @@ function TemplateDetailPage() {
     const [editingQuestion, setEditingQuestion] = useState(null);
     const [submissions, setSubmissions] = useState([]);
     const [isPublic, setIsPublic] = useState(true);
+    const [allowedUsers, setAllowedUsers] = useState([]);
+    const [userSearchTerm, setUserSearchTerm] = useState('');
+    const [userSearchResults, setUserSearchResults] = useState([]);
 
     const fetchTemplate = useCallback(async () => {
+        setLoading(true);
         try {
             const response = await axios.get(`${API_URL}/api/templates/${id}`, { headers: { Authorization: `Bearer ${token}` } });
             const sortedQuestions = response.data.questions.sort((a, b) => a.order - b.order);
             setTemplate({ ...response.data, questions: sortedQuestions });
             setIsPublic(response.data.isPublic);
+            setAllowedUsers(response.data.allowedUsers || []);
         } catch (err) {
             setError('Не удалось загрузить шаблон');
         } finally {
@@ -85,6 +90,30 @@ function TemplateDetailPage() {
     }, [id, token]);
 
     useEffect(() => { fetchTemplate(); fetchSubmissions();}, [fetchTemplate, fetchSubmissions]);
+
+    useEffect(() => {
+        if (userSearchTerm.length < 2) {
+            setUserSearchResults([]);
+            return;
+        }
+        const delayDebounceFn = setTimeout(async () => {
+            const { data } = await axios.get(`${API_URL}/api/users/search?term=${userSearchTerm}`, { headers: { Authorization: `Bearer ${token}` } });
+            setUserSearchResults(data);
+        }, 300);
+        return () => clearTimeout(delayDebounceFn);
+    }, [userSearchTerm, token]);
+
+    const addUserToAllowed = (user) => {
+        if (!allowedUsers.find(u => u.id === user.id)) {
+            setAllowedUsers([...allowedUsers, user]);
+        }
+        setUserSearchTerm('');
+        setUserSearchResults([]);
+    };
+
+    const removeUserFromAllowed = (userId) => {
+        setAllowedUsers(allowedUsers.filter(u => u.id !== userId));
+    };
 
     const handleAddQuestion = async (e) => {
         e.preventDefault();
@@ -142,7 +171,7 @@ function TemplateDetailPage() {
     const handleSettingsSave = async () => {
         try {
         await axios.put(`${API_URL}/api/templates/${id}`, 
-            { isPublic }, 
+            { isPublic, allowedUserIds }, 
             { headers: { Authorization: `Bearer ${token}` } }
         );
         alert('Настройки сохранены!');
@@ -201,6 +230,38 @@ function TemplateDetailPage() {
                 />
                 <label htmlFor="private">Ограниченный (только для выбранных пользователей)</label>
             </div>
+            {!isPublic && (
+                <div style={{ border: '1px solid #555', padding: '15px', marginTop: '10px', borderRadius: '8px' }}>
+                    <h4>Управление доступом</h4>
+                    <input
+                        type="text"
+                        placeholder="Поиск пользователя по имени или email..."
+                        value={userSearchTerm}
+                        onChange={(e) => setUserSearchTerm(e.target.value)}
+                        style={{ width: '100%' }}
+                    />
+                    {userSearchResults.length > 0 && (
+                        <ul style={{ border: '1px solid #555', listStyle: 'none', padding: '5px', marginTop: '5px' }}>
+                            {userSearchResults.map(user => (
+                                <li key={user.id} onClick={() => addUserToAllowed(user)} style={{ cursor: 'pointer', padding: '5px' }}>
+                                    {user.name} ({user.email})
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    <h5 style={{marginTop: '15px'}}>Допущенные пользователи:</h5>
+                    {allowedUsers.length > 0 ? (
+                        <ul style={{listStyle: 'none', padding: 0}}>
+                            {allowedUsers.map(user => (
+                                <li key={user.id}>
+                                    {user.name} ({user.email})
+                                    <button onClick={() => removeUserFromAllowed(user.id)} style={{ marginLeft: '10px' }}>Удалить</button>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : <p>Никто еще не добавлен.</p>}
+                </div>
+            )}
             <button onClick={handleSettingsSave} style={{marginTop: '10px'}}>Сохранить настройки</button>
             <hr/>
             <form onSubmit={handleAddQuestion}>
