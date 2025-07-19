@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 
@@ -10,13 +10,13 @@ function PublicFormPage() {
   const [template, setTemplate] = useState(null);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
-  const { user, token } = useAuthStore();
   const [newComment, setNewComment] = useState('');
+  const { user, token } = useAuthStore();
 
   const fetchTemplate = useCallback(async () => {
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(`${API_URL}/api/templates/${id}`);
+      const response = await axios.get(`${API_URL}/api/templates/${id}`, { headers });
       const sortedQuestions = response.data.questions.sort((a, b) => a.order - b.order);
       setTemplate({ ...response.data, questions: sortedQuestions });
     } catch (err) {
@@ -24,7 +24,7 @@ function PublicFormPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, token]); 
 
   useEffect(() => {
     fetchTemplate();
@@ -76,16 +76,19 @@ function PublicFormPage() {
   if (loading) return <div>Загрузка...</div>;
   if (!template) return <div>Шаблон не найден или у вас нет доступа.</div>;
 
+  const hasLiked = template.likes.some(like => like.userId === user?.id);
+
   return (
-    <div style={{ maxWidth: '600px', margin: 'auto', padding: '20px' }}>
+    <div style={{ maxWidth: '700px', margin: 'auto', padding: '20px' }}>
       <h1>{template.title}</h1>
       <p>{template.description}</p>
-
+      
       {user && (
           <button onClick={handleLike} style={{ marginTop: '10px' }}>
               {hasLiked ? '❤️ Убрать лайк' : '🤍 Лайк'} ({template.likes.length})
           </button>
       )}
+
       <hr style={{margin: '2rem 0'}} />
       <h3>Вопросы</h3>
       <form onSubmit={handleSubmit}>
@@ -142,7 +145,6 @@ function PublicFormPage() {
           <button type="submit" style={{ marginTop: '5px' }}>Отправить</button>
         </form>
       )}
-      
     </div>
   );
 }
