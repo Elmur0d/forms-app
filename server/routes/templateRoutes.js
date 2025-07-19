@@ -4,6 +4,7 @@ import { protect } from '../middleware/authMiddleware.js';
 import { addQuestion } from '../controllers/questionController.js';
 import { getSubmissionsForTemplate } from '../controllers/formController.js';
 import { getTemplateStats } from '../controllers/templateController.js';
+import { toggleLike, addComment } from '../controllers/interactionController.js';
 
 const optionalProtect = (req, res, next) => {
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -29,5 +30,7 @@ router
 router.route('/:templateId/questions').post(protect, addQuestion);
 router.route('/:templateId/forms').get(protect, getSubmissionsForTemplate);
 router.route('/:id/stats').get(protect, getTemplateStats);
+router.route('/:id/like').post(protect, toggleLike);
+router.route('/:id/comments').post(protect, addComment);
 
 export default router;

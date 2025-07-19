@@ -70,10 +70,10 @@ export const getMyTemplates = async (req, res) => {
 
 
 export const getTemplateById = async (req, res) => {
-  const { id } = req.params;
   try {
+    const templateId = parseInt(req.params.id);
     const template = await prisma.template.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: templateId },
       include: {
         author: { select: { name: true } },
         questions: {
@@ -82,6 +82,13 @@ export const getTemplateById = async (req, res) => {
           },
         },
         tags: true,
+        likes: true, 
+        comments: { 
+          orderBy: { createdAt: 'asc' }, 
+          include: {
+            user: { select: { name: true, email: true } } 
+          }
+        }
       },
     });
 

@@ -21,6 +21,8 @@ model User {
   templates Template[]
   forms     Form[] 
   allowedTemplates Template[] @relation("TemplateAccess")
+  likes     Like[]
+  comments  Comment[]
 }
 
 model Template {
@@ -38,6 +40,8 @@ model Template {
   forms       Form[] 
   tags        Tag[]
   allowedUsers User[] @relation("TemplateAccess")
+  likes     Like[]
+  comments  Comment[]
 }
 
 model Question {
@@ -85,4 +89,24 @@ model Tag {
   id        Int        @id @default(autoincrement())
   name      String     @unique 
   templates Template[]
+}
+
+model Like {
+  id         Int      @id @default(autoincrement())
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+
+  @@unique([templateId, userId]) // Пользователь может поставить только один лайк на один шаблон
+}
+
+model Comment {
+  id         Int      @id @default(autoincrement())
+  text       String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  createdAt  DateTime @default(now())
 }

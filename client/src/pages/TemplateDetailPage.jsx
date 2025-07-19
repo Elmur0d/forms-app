@@ -39,7 +39,7 @@ function SortableQuestionItem({ question, handleDelete, handleEdit }) {
 function TemplateDetailPage() {
     const { id } = useParams();
     const [template, setTemplate] = useState(null);
-    const token = useAuthStore((state) => state.token);
+    const { user, token } = useAuthStore();
 
     const [newQuestionTitle, setNewQuestionTitle] = useState('');
     const [newQuestionType, setNewQuestionType] = useState('single-line');
@@ -51,6 +51,7 @@ function TemplateDetailPage() {
     const [userSearchTerm, setUserSearchTerm] = useState('');
     const [userSearchResults, setUserSearchResults] = useState([]);
     const [stats, setStats] = useState([]);
+    const [newComment, setNewComment] = useState('');
 
     const fetchTemplate = useCallback(async () => {
         try {
@@ -102,6 +103,33 @@ function TemplateDetailPage() {
         return () => clearTimeout(handler);
     }, [userSearchTerm, token, allowedUsers]);
 
+    const handleLike = async () => {
+    try {
+        await axios.post(`${API_URL}/api/templates/${id}/like`, {}, { 
+            headers: { Authorization: `Bearer ${token}` } 
+        });
+        fetchTemplate(); 
+        } catch (err) {
+        alert('Не удалось обработать лайк. Попробуйте снова.');
+        console.error(err);
+        }
+    };
+
+    const handleAddComment = async (e) => {
+        e.preventDefault();
+        if (!newComment.trim()) return;
+        try {
+        await axios.post(`${API_URL}/api/templates/${id}/comments`, 
+            { text: newComment }, 
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setNewComment('');
+        fetchTemplate(); 
+        } catch (err) {
+        alert('Не удалось добавить комментарий.');
+        }
+    };
+
     const addUserToAllowed = (user) => {
         setAllowedUsers([...allowedUsers, user]);
         setUserSearchTerm('');
@@ -147,6 +175,7 @@ function TemplateDetailPage() {
     };
 
     if (!template) return <div>Загрузка...</div>;
+    const hasLiked = template.likes.some(like => like.userId === user?.id);
     const questionCounts = template.questions.reduce((acc, q) => ({ ...acc, [q.type]: (acc[q.type] || 0) + 1 }), {});
     const isLimitReached = !newQuestionType || questionCounts[newQuestionType] >= 4;
 
@@ -157,6 +186,11 @@ function TemplateDetailPage() {
             <Link to="/dashboard">← Назад в личный кабинет</Link>
             <h1>{template.title}</h1>
             
+            {user && ( 
+                <button onClick={handleLike} style={{ marginTop: '10px' }}>
+                    {hasLiked ? '❤️ Убрать лайк' : '🤍 Лайк'} ({template.likes.length})
+                </button>
+            )}
             {template.tags && template.tags.length > 0 && (
                 <div style={{ marginBottom: '10px' }}>
                     {template.tags.map(tag => (
@@ -212,6 +246,34 @@ function TemplateDetailPage() {
                 </div>
             )}
             <button onClick={handleSettingsSave} style={{marginTop: '10px'}}>Сохранить настройки</button>
+            <hr/>
+
+            <h2>Комментарии</h2>
+            <div style={{ border: '1px solid #555', padding: '10px', marginBottom: '15px', maxHeight: '300px', overflowY: 'auto' }}>
+                {template.comments.length > 0 ? (
+                template.comments.map(comment => (
+                    <div key={comment.id} style={{ borderBottom: '1px solid #444', paddingBottom: '5px', marginBottom: '5px' }}>
+                    <strong>{comment.user.name || comment.user.email}:</strong>
+                    <p style={{ margin: '5px 0' }}>{comment.text}</p>
+                    <small>{new Date(comment.createdAt).toLocaleString()}</small>
+                    </div>
+                ))
+                ) : (
+                <p>Комментариев пока нет.</p>
+                )}
+            </div>
+
+            {user && ( 
+                <form onSubmit={handleAddComment}>
+                <textarea 
+                    value={newComment} 
+                    onChange={(e) => setNewComment(e.target.value)} 
+                    placeholder="Оставить комментарий..."
+                    style={{ width: '100%', minHeight: '60px' }}
+                ></textarea>
+                <button type="submit" style={{ marginTop: '5px' }}>Отправить</button>
+                </form>
+            )}
             <hr/>
             
             <h3>Добавить новый вопрос</h3>
