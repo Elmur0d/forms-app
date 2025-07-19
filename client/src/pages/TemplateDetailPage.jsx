@@ -29,20 +29,8 @@ function SortableQuestionItem({ question, handleDelete, handleEdit }) {
     <li ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <span>{question.title} ({question.type})</span>
       <div>
-        <button
-          onPointerDown={(e) => e.stopPropagation()} 
-          onClick={() => handleEdit(question)}
-          style={{ color: 'lightblue', border: 'none', background: 'transparent', cursor: 'pointer', marginRight: '10px' }}
-        >
-          Редактировать
-        </button>
-        <button
-          onPointerDown={(e) => e.stopPropagation()} 
-          onClick={() => handleDelete(question.id)}
-          style={{ color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}
-        >
-          Удалить
-        </button>
+        <button onPointerDown={(e) => e.stopPropagation()} onClick={() => handleEdit(question)} style={{ color: 'lightblue', border: 'none', background: 'transparent', cursor: 'pointer', marginRight: '10px' }}>Редактировать</button>
+        <button onPointerDown={(e) => e.stopPropagation()} onClick={() => handleDelete(question.id)} style={{ color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}>Удалить</button>
       </div>
     </li>
   );
@@ -51,62 +39,45 @@ function SortableQuestionItem({ question, handleDelete, handleEdit }) {
 function TemplateDetailPage() {
     const { id } = useParams();
     const [template, setTemplate] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const token = useAuthStore((state) => state.token);
+
     const [newQuestionTitle, setNewQuestionTitle] = useState('');
     const [newQuestionType, setNewQuestionType] = useState('single-line');
     const [editingQuestion, setEditingQuestion] = useState(null);
-    const [submissions, setSubmissions] = useState([]);
+
     const [isPublic, setIsPublic] = useState(true);
     const [allowedUsers, setAllowedUsers] = useState([]);
     const [userSearchTerm, setUserSearchTerm] = useState('');
     const [userSearchResults, setUserSearchResults] = useState([]);
 
     const fetchTemplate = useCallback(async () => {
-        setLoading(true);
         try {
-            const response = await axios.get(`${API_URL}/api/templates/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-            const sortedQuestions = response.data.questions.sort((a, b) => a.order - b.order);
-            setTemplate({ ...response.data, questions: sortedQuestions });
-            setIsPublic(response.data.isPublic);
-            setAllowedUsers(response.data.allowedUsers || []);
+            const { data } = await axios.get(`${API_URL}/api/templates/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+            const sortedQuestions = data.questions.sort((a, b) => a.order - b.order);
+            setTemplate({ ...data, questions: sortedQuestions });
+            setIsPublic(data.isPublic);
+            setAllowedUsers(data.allowedUsers || []);
         } catch (err) {
-            setError('Не удалось загрузить шаблон');
-        } finally {
-            setLoading(false);
+            console.error(err);
         }
     }, [id, token]);
 
-    const fetchSubmissions = useCallback(async () => {
-        try {
-            const response = await axios.get(`${API_URL}/api/templates/${id}/forms`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setSubmissions(response.data);
-        } catch (err) {
-            console.error("Failed to fetch submissions:", err);
-        }
-    }, [id, token]);
-
-    useEffect(() => { fetchTemplate(); fetchSubmissions();}, [fetchTemplate, fetchSubmissions]);
+    useEffect(() => { fetchTemplate(); }, [fetchTemplate]);
 
     useEffect(() => {
         if (userSearchTerm.length < 2) {
             setUserSearchResults([]);
             return;
         }
-        const delayDebounceFn = setTimeout(async () => {
+        const handler = setTimeout(async () => {
             const { data } = await axios.get(`${API_URL}/api/users/search?term=${userSearchTerm}`, { headers: { Authorization: `Bearer ${token}` } });
-            setUserSearchResults(data);
+            setUserSearchResults(data.filter(user => !allowedUsers.some(au => au.id === user.id)));
         }, 300);
-        return () => clearTimeout(delayDebounceFn);
-    }, [userSearchTerm, token]);
+        return () => clearTimeout(handler);
+    }, [userSearchTerm, token, allowedUsers]);
 
     const addUserToAllowed = (user) => {
-        if (!allowedUsers.find(u => u.id === user.id)) {
-            setAllowedUsers([...allowedUsers, user]);
-        }
+        setAllowedUsers([...allowedUsers, user]);
         setUserSearchTerm('');
         setUserSearchResults([]);
     };
@@ -115,42 +86,24 @@ function TemplateDetailPage() {
         setAllowedUsers(allowedUsers.filter(u => u.id !== userId));
     };
 
-    const handleAddQuestion = async (e) => {
-        e.preventDefault();
-        if (!newQuestionTitle) return;
+    const handleSettingsSave = async () => {
         try {
-            await axios.post(`${API_URL}/api/templates/${id}/questions`, { title: newQuestionTitle, type: newQuestionType }, { headers: { Authorization: `Bearer ${token}` } });
-            setNewQuestionTitle('');
-            fetchTemplate();
+            const allowedUserIds = isPublic ? [] : allowedUsers.map(u => u.id);
+            await axios.put(`${API_URL}/api/templates/${id}`,
+                { isPublic, allowedUserIds },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            alert('Настройки сохранены!');
         } catch (err) {
-            alert(err.response?.data?.msg || 'Не удалось добавить вопрос');
+            alert('Не удалось сохранить настройки');
         }
     };
 
-    const handleDeleteQuestion = async (questionId) => {
-        if (window.confirm('Вы уверены?')) {
-            try {
-                await axios.delete(`${API_URL}/api/questions/${questionId}`, { headers: { Authorization: `Bearer ${token}` } });
-                fetchTemplate();
-            } catch (err) {
-                alert('Не удалось удалить вопрос');
-            }
-        }
-    };
-
-    const handleUpdateQuestion = async (questionId, updatedData) => {
-      try {
-        await axios.put(`${API_URL}/api/questions/${questionId}`, updatedData, { headers: { Authorization: `Bearer ${token}` } });
-        setEditingQuestion(null);
-        fetchTemplate();
-      } catch (err) {
-        alert('Не удалось обновить вопрос');
-      }
-    };
-    
+    const handleAddQuestion = async (e) => { e.preventDefault(); try { await axios.post(`${API_URL}/api/templates/${id}/questions`, { title: newQuestionTitle, type: newQuestionType }, { headers: { Authorization: `Bearer ${token}` } }); setNewQuestionTitle(''); fetchTemplate(); } catch (err) { alert(err.response?.data?.msg || 'Не удалось добавить вопрос'); } };
+    const handleDeleteQuestion = async (questionId) => { if (window.confirm('Вы уверены?')) { try { await axios.delete(`${API_URL}/api/questions/${questionId}`, { headers: { Authorization: `Bearer ${token}` } }); fetchTemplate(); } catch (err) { alert('Не удалось удалить вопрос'); } } };
+    const handleUpdateQuestion = async (questionId, updatedData) => { try { await axios.put(`${API_URL}/api/questions/${questionId}`, updatedData, { headers: { Authorization: `Bearer ${token}` } }); setEditingQuestion(null); fetchTemplate(); } catch (err) { alert('Не удалось обновить вопрос'); } };
     const sensors = useSensors(useSensor(PointerSensor));
-
-    const handleDragEnd = (event) => {
+    const handleDragEnd = (event) => { 
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
@@ -165,25 +118,9 @@ function TemplateDetailPage() {
             .catch(() => {
                 alert('Не удалось сохранить новый порядок.');
                 setTemplate(prev => ({ ...prev, questions: originalQuestions }));
-            });
-    };
+        }); };
 
-    const handleSettingsSave = async () => {
-        try {
-        await axios.put(`${API_URL}/api/templates/${id}`, 
-            { isPublic, allowedUserIds }, 
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
-        alert('Настройки сохранены!');
-        } catch (err) {
-        alert('Не удалось сохранить настройки');
-        }
-    };
-
-    if (loading) return <div>Загрузка...</div>;
-    if (error) return <div>Ошибка: {error}</div>;
-    if (!template) return <div>Шаблон не найден.</div>;
-    
+    if (!template) return <div>Загрузка...</div>;
     const questionCounts = template.questions.reduce((acc, q) => ({ ...acc, [q.type]: (acc[q.type] || 0) + 1 }), {});
     const isLimitReached = !newQuestionType || questionCounts[newQuestionType] >= 4;
 
