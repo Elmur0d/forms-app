@@ -123,17 +123,21 @@ export const updateTemplate = async (req, res) => {
       return res.status(403).json({ msg: 'Действие запрещено' });
     }
 
+    const dataToUpdate = {};
+    if (title !== undefined) dataToUpdate.title = title;
+    if (description !== undefined) dataToUpdate.description = description;
+    if (topic !== undefined) dataToUpdate.topic = topic;
+    if (isPublic !== undefined) dataToUpdate.isPublic = isPublic;
+
+    if (allowedUserIds !== undefined) {
+      dataToUpdate.allowedUsers = {
+        set: allowedUserIds.map(id => ({ id: id })),
+      };
+    }
+
     const updatedTemplate = await prisma.template.update({
       where: { id: templateId },
-      data: {
-        title,
-        description,
-        topic,
-        isPublic,
-        allowedUsers: {
-          set: allowedUserIds ? allowedUserIds.map(id => ({ id: id })) : [],
-        },
-      },
+      data: dataToUpdate,
     });
     
     res.json(updatedTemplate);
