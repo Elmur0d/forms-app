@@ -5,7 +5,7 @@ import useAuthStore from '../store/authStore';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import EditQuestionModal from '../components/EditQuestionModal'; 
+import EditQuestionModal from '../components/EditQuestionModal';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -44,6 +44,7 @@ function TemplateDetailPage() {
     const [newQuestionTitle, setNewQuestionTitle] = useState('');
     const [newQuestionType, setNewQuestionType] = useState('single-line');
     const [editingQuestion, setEditingQuestion] = useState(null);
+    const [submissions, setSubmissions] = useState([]);
 
     const [isPublic, setIsPublic] = useState(true);
     const [allowedUsers, setAllowedUsers] = useState([]);
@@ -61,8 +62,20 @@ function TemplateDetailPage() {
             console.error(err);
         }
     }, [id, token]);
+    
+    const fetchSubmissions = useCallback(async () => {
+        try {
+          const { data } = await axios.get(`${API_URL}/api/templates/${id}/forms`, { headers: { Authorization: `Bearer ${token}` } });
+          setSubmissions(data);
+        } catch (err) {
+          console.error("Failed to fetch submissions:", err);
+        }
+    }, [id, token]);
 
-    useEffect(() => { fetchTemplate(); }, [fetchTemplate]);
+    useEffect(() => {
+        fetchTemplate();
+        fetchSubmissions();
+    }, [fetchTemplate, fetchSubmissions]);
 
     useEffect(() => {
         if (userSearchTerm.length < 2) {
@@ -106,7 +119,6 @@ function TemplateDetailPage() {
     const handleDragEnd = (event) => { 
         const { active, over } = event;
         if (!over || active.id === over.id) return;
-
         const originalQuestions = template.questions;
         const oldIndex = originalQuestions.findIndex((q) => q.id === active.id);
         const newIndex = originalQuestions.findIndex((q) => q.id === over.id);
@@ -118,7 +130,8 @@ function TemplateDetailPage() {
             .catch(() => {
                 alert('Не удалось сохранить новый порядок.');
                 setTemplate(prev => ({ ...prev, questions: originalQuestions }));
-        }); };
+        }); 
+    };
 
     if (!template) return <div>Загрузка...</div>;
     const questionCounts = template.questions.reduce((acc, q) => ({ ...acc, [q.type]: (acc[q.type] || 0) + 1 }), {});
@@ -126,16 +139,11 @@ function TemplateDetailPage() {
 
     return (
         <div>
-            <a href={`/form/${template.id}`} target="_blank" rel="noopener noreferrer">
-                Открыть публичную ссылку
-            </a>
+            <a href={`/form/${template.id}`} target="_blank" rel="noopener noreferrer">Открыть публичную ссылку</a>
             <hr/>
             <Link to="/dashboard">← Назад в личный кабинет</Link>
             <h1>{template.title}</h1>
-
-            <p><strong>Тема:</strong> {template.topic}</p>
-            <p><strong>Описание:</strong> {template.description || 'Нет описания'}</p>
-            <hr />
+            
             {template.tags && template.tags.length > 0 && (
                 <div style={{ marginBottom: '10px' }}>
                     {template.tags.map(tag => (
@@ -145,28 +153,19 @@ function TemplateDetailPage() {
                     ))}
                 </div>
             )}
+            <p><strong>Тема:</strong> {template.topic}</p>
+            <p><strong>Описание:</strong> {template.description || 'Нет описания'}</p>
             <hr/>
             <h2>Настройки доступа</h2>
             <div>
-                <input 
-                    type="radio" 
-                    id="public" 
-                    name="access" 
-                    checked={isPublic} 
-                    onChange={() => setIsPublic(true)}
-                />
-                <label htmlFor="public">Публичный (доступен всем)</label>
+                <input type="radio" id="public" name="access" checked={isPublic} onChange={() => setIsPublic(true)} />
+                <label htmlFor="public" style={{ marginLeft: '5px' }}>Публичный (доступен всем)</label>
             </div>
             <div>
-                <input 
-                    type="radio" 
-                    id="private" 
-                    name="access" 
-                    checked={!isPublic} 
-                    onChange={() => setIsPublic(false)}
-                />
-                <label htmlFor="private">Ограниченный (только для выбранных пользователей)</label>
+                <input type="radio" id="private" name="access" checked={!isPublic} onChange={() => setIsPublic(false)} />
+                <label htmlFor="private" style={{ marginLeft: '5px' }}>Ограниченный (только для выбранных пользователей)</label>
             </div>
+
             {!isPublic && (
                 <div style={{ border: '1px solid #555', padding: '15px', marginTop: '10px', borderRadius: '8px' }}>
                     <h4>Управление доступом</h4>
@@ -201,8 +200,9 @@ function TemplateDetailPage() {
             )}
             <button onClick={handleSettingsSave} style={{marginTop: '10px'}}>Сохранить настройки</button>
             <hr/>
+            
+            <h3>Добавить новый вопрос</h3>
             <form onSubmit={handleAddQuestion}>
-                <h3>Добавить новый вопрос</h3>
                 <input type="text" value={newQuestionTitle} onChange={(e) => setNewQuestionTitle(e.target.value)} placeholder="Текст вопроса" required />
                 <select value={newQuestionType} onChange={(e) => setNewQuestionType(e.target.value)}>
                     <option value="single-line">Однострочный текст ({questionCounts['single-line'] || 0}/4)</option>
@@ -217,19 +217,17 @@ function TemplateDetailPage() {
             <h2>Результаты ({submissions.length})</h2>
             {submissions.length > 0 ? (
                 <ul>
-                {submissions.map(sub => (
-                    <li key={sub.id}>
-                        <Link to={`/submission/${sub.id}`}>
-                        Заполнено пользователем: <strong>{sub.user.name || sub.user.email}</strong> 
-                        {' в '} 
-                        {new Date(sub.createdAt).toLocaleString()}
-                        </Link>
-                    </li>
-                ))}
+                    {submissions.map(sub => (
+                        <li key={sub.id}>
+                            <Link to={`/submission/${sub.id}`}>
+                                Заполнено пользователем: <strong>{sub.user.name || sub.user.email}</strong> 
+                                {' в '} 
+                                {new Date(sub.createdAt).toLocaleString()}
+                            </Link>
+                        </li>
+                    ))}
                 </ul>
-            ) : (
-                <p>Эту форму еще никто не заполнял.</p>
-            )}
+            ) : (<p>Эту форму еще никто не заполнял.</p>)}
 
             <h2>Вопросы:</h2>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
