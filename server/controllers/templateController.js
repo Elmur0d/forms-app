@@ -70,24 +70,21 @@ export const getMyTemplates = async (req, res) => {
 
 
 export const getTemplateById = async (req, res) => {
+  const { id } = req.params;
   try {
-    const templateId = parseInt(req.params.id);
     const template = await prisma.template.findUnique({
-      where: { id: templateId },
+      where: { id: parseInt(id) },
       include: {
         author: { select: { name: true } },
-        questions: {
-          orderBy: {
-            order: 'asc',
-          },
-        },
+        questions: { orderBy: { order: 'asc' } },
         tags: true,
-        likes: true, 
-        comments: { 
-          orderBy: { createdAt: 'asc' }, 
-          include: {
-            user: { select: { name: true, email: true } } 
-          }
+        allowedUsers: {
+          select: { id: true, name: true, email: true }
+        },
+        likes: true,
+        comments: {
+          orderBy: { createdAt: 'asc' },
+          include: { user: { select: { name: true, email: true } } }
         }
       },
     });
@@ -95,18 +92,12 @@ export const getTemplateById = async (req, res) => {
     if (!template) {
       return res.status(404).json({ msg: 'Шаблон не найден' });
     }
-
     if (!template.isPublic) {
-      if (!req.user) {
-        return res.status(403).json({ msg: 'Доступ запрещен' });
-      }
-      if (template.authorId !== req.user.id && req.user.role !== 'ADMIN') {
+      if (!req.user || (template.authorId !== req.user.id && req.user.role !== 'ADMIN')) {
         return res.status(403).json({ msg: 'Доступ запрещен' });
       }
     }
-
     res.json(template);
-
   } catch (error) {
     console.error('Get Template By Id Error:', error);
     res.status(500).json({ msg: 'Ошибка сервера' });
