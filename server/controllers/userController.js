@@ -54,3 +54,24 @@ export const deleteUser = async (req, res) => {
       res.status(500).json({ msg: 'Ошибка сервера' });
     }
 };
+
+export const searchUsers = async (req, res) => {
+  const { term } = req.query;
+  if (!term) return res.json([]);
+
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { name: { contains: term, mode: 'insensitive' } },
+          { email: { contains: term, mode: 'insensitive' } },
+        ],
+      },
+      select: { id: true, name: true, email: true },
+      take: 10, 
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};

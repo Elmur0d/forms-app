@@ -58,12 +58,14 @@ function TemplateDetailPage() {
     const [newQuestionType, setNewQuestionType] = useState('single-line');
     const [editingQuestion, setEditingQuestion] = useState(null);
     const [submissions, setSubmissions] = useState([]);
+    const [isPublic, setIsPublic] = useState(true);
 
     const fetchTemplate = useCallback(async () => {
         try {
             const response = await axios.get(`${API_URL}/api/templates/${id}`, { headers: { Authorization: `Bearer ${token}` } });
             const sortedQuestions = response.data.questions.sort((a, b) => a.order - b.order);
             setTemplate({ ...response.data, questions: sortedQuestions });
+            setIsPublic(response.data.isPublic);
         } catch (err) {
             setError('Не удалось загрузить шаблон');
         } finally {
@@ -137,6 +139,18 @@ function TemplateDetailPage() {
             });
     };
 
+    const handleSettingsSave = async () => {
+        try {
+        await axios.put(`${API_URL}/api/templates/${id}`, 
+            { isPublic }, 
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        alert('Настройки сохранены!');
+        } catch (err) {
+        alert('Не удалось сохранить настройки');
+        }
+    };
+
     if (loading) return <div>Загрузка...</div>;
     if (error) return <div>Ошибка: {error}</div>;
     if (!template) return <div>Шаблон не найден.</div>;
@@ -165,6 +179,30 @@ function TemplateDetailPage() {
                     ))}
                 </div>
             )}
+            <hr/>
+            <h2>Настройки доступа</h2>
+            <div>
+                <input 
+                    type="radio" 
+                    id="public" 
+                    name="access" 
+                    checked={isPublic} 
+                    onChange={() => setIsPublic(true)}
+                />
+                <label htmlFor="public">Публичный (доступен всем)</label>
+            </div>
+            <div>
+                <input 
+                    type="radio" 
+                    id="private" 
+                    name="access" 
+                    checked={!isPublic} 
+                    onChange={() => setIsPublic(false)}
+                />
+                <label htmlFor="private">Ограниченный (только для выбранных пользователей)</label>
+            </div>
+            <button onClick={handleSettingsSave} style={{marginTop: '10px'}}>Сохранить настройки</button>
+            <hr/>
             <form onSubmit={handleAddQuestion}>
                 <h3>Добавить новый вопрос</h3>
                 <input type="text" value={newQuestionTitle} onChange={(e) => setNewQuestionTitle(e.target.value)} placeholder="Текст вопроса" required />
