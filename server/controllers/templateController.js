@@ -93,8 +93,16 @@ export const getTemplateById = async (req, res) => {
       return res.status(404).json({ msg: 'Шаблон не найден' });
     }
     if (!template.isPublic) {
-      if (!req.user || (template.authorId !== req.user.id && req.user.role !== 'ADMIN')) {
+      if (!req.user) {
         return res.status(403).json({ msg: 'Доступ запрещен' });
+      }
+
+      const isAuthor = template.authorId === req.user.id;
+      const isAdmin = req.user.role === 'ADMIN';
+      const isAllowed = template.allowedUsers.some(allowedUser => allowedUser.id === req.user.id);
+
+      if (!isAuthor && !isAdmin && !isAllowed) {
+        return res.status(403).json({ msg: 'Доступ к этому приватному шаблону запрещен' });
       }
     }
     res.json(template);
