@@ -10,7 +10,6 @@ export const uploadImage = async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ msg: 'Файл не загружен' });
         }
-
         const result = await client.uploadFile(req.file.buffer, {
             fileName: req.file.originalname,
             contentType: req.file.mimetype,

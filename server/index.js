@@ -8,6 +8,7 @@ import searchRoutes from './routes/searchRoutes.js';
 import tagRoutes from './routes/tagRoutes.js';
 import ticketRoutes from './routes/ticketRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/upload', uploadRoutes);
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}`));
