@@ -6,15 +6,29 @@ const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 function TemplateCard({ template }) {
   return (
-    <div style={{ border: '1px solid #444', padding: '15px', borderRadius: '8px' }}>
-      <h3>{template.title}</h3>
+    <div style={{ border: '1px solid #444', padding: '15px', borderRadius: '8px', display: 'flex', flexDirection: 'column' }}>
+      
+      {template.imageUrl ? (
+        <img 
+          src={template.imageUrl} 
+          alt={template.title} 
+          style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '4px', marginBottom: '10px' }} 
+        />
+      ) : (
+        <div style={{ width: '100%', height: '150px', background: '#333', borderRadius: '4px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ color: '#888' }}>Нет обложки</span>
+        </div>
+      )}
+      
+      <h3 style={{ marginTop: 0, flexGrow: 1 }}>{template.title}</h3>
       <p>Автор: {template.author.name || 'Аноним'}</p>
-      {/* Если есть счетчик, показываем популярность */}
+      
       {template._count?.forms !== undefined && (
         <p>Заполнений: {template._count.forms}</p>
       )}
+
       <Link to={`/form/${template.id}`}>
-        <button>Заполнить форму</button>
+        <button style={{ width: '100%' }}>Заполнить форму</button>
       </Link>
     </div>
   );
