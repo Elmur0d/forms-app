@@ -34,7 +34,6 @@ const useTemplateStore = create((set) => ({
           Authorization: `Bearer ${token}`,
         },
       });
-      // Добавляем новый шаблон в начало списка
       set((state) => ({
         myTemplates: [response.data, ...state.myTemplates],
         isLoading: false,
@@ -43,6 +42,24 @@ const useTemplateStore = create((set) => ({
     } catch (error) {
       console.error("Failed to create template:", error);
       set({ error: 'Не удалось создать шаблон', isLoading: false });
+      return { success: false };
+    }
+  },
+
+  deleteTemplate: async (templateId) => {
+    try {
+      const token = useAuthStore.getState().token;
+      await axios.delete(`${API_URL}/api/templates/${templateId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      set((state) => ({
+        myTemplates: state.myTemplates.filter((t) => t.id !== templateId),
+      }));
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to delete template:", error);
       return { success: false };
     }
   },

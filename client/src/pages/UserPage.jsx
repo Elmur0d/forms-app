@@ -9,7 +9,7 @@ const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 function UserPage() {
   const { user } = useAuthStore();
-  const { myTemplates, isLoading: templatesLoading, fetchMyTemplates } = useTemplateStore();
+  const { myTemplates, isLoading: templatesLoading, fetchMyTemplates, deleteTemplate } = useTemplateStore();
   
   const [mySubmissions, setMySubmissions] = useState([]);
   const [submissionsLoading, setSubmissionsLoading] = useState(true);
@@ -20,6 +20,7 @@ function UserPage() {
   const [activeTab, setActiveTab] = useState('templates'); 
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+
 
   useEffect(() => {
     fetchMyTemplates();
@@ -58,6 +59,12 @@ function UserPage() {
     fetchSharedTemplates();
   }, [fetchMyTemplates]);
 
+  const handleDeleteTemplate = (templateId) => {
+      if (window.confirm('Вы уверены, что хотите удалить этот шаблон? Все связанные с ним вопросы и ответы будут также удалены.')) {
+          deleteTemplate(templateId);
+      }
+    };
+
   return (
     <div>
       <h1>Личный кабинет</h1>
@@ -77,9 +84,17 @@ function UserPage() {
             myTemplates.length > 0 ? (
               <ul>
                 {myTemplates.map((template) => (
-                  <li key={template.id}>
-                    <Link to={`/template/${template.id}`}>{template.title}</Link>
-                    <span style={{ marginLeft: '10px', fontSize: '0.8em', color: '#888' }}>({template.topic})</span>
+                  <li key={template.id} style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <Link to={`/template/${template.id}`}>{template.title}</Link>
+                      <span style={{ marginLeft: '10px', fontSize: '0.8em', color: '#888' }}>({template.topic})</span>
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteTemplate(template.id)} 
+                      style={{ background: '#8B0000' }}
+                    >
+                      Удалить
+                    </button>
                   </li>
                 ))}
               </ul>
