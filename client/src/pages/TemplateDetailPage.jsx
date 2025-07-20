@@ -53,6 +53,9 @@ function TemplateDetailPage() {
     const [stats, setStats] = useState([]);
     const [newComment, setNewComment] = useState('');
 
+    const [imageFile, setImageFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+
     const fetchTemplate = useCallback(async () => {
         try {
             const { data } = await axios.get(`${API_URL}/api/templates/${id}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -102,6 +105,36 @@ function TemplateDetailPage() {
         }, 300);
         return () => clearTimeout(handler);
     }, [userSearchTerm, token, allowedUsers]);
+
+    const handleImageUpload = async () => {
+        if (!imageFile) return;
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('image', imageFile);
+
+        try {
+            const uploadRes = await axios.post(`${API_URL}/api/upload`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const imageUrl = uploadRes.data.secure_url;
+
+            await axios.put(`${API_URL}/api/templates/${id}`,
+                { imageUrl }, 
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            fetchTemplate(); 
+            setImageFile(null); 
+            alert('Обложка успешно обновлена!');
+        } catch (err) {
+            alert('Ошибка при загрузке изображения.');
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     const handleLike = async () => {
     try {
@@ -185,6 +218,15 @@ function TemplateDetailPage() {
             <hr/>
             <Link to="/dashboard">← Назад в личный кабинет</Link>
             <h1>{template.title}</h1>
+
+            <div style={{ margin: '20px 0' }}>
+                <h3>Обложка шаблона</h3>
+                {template.imageUrl && <img src={template.imageUrl} alt="Обложка" style={{ maxWidth: '300px', display: 'block', marginBottom: '10px', borderRadius: '8px' }} />}
+                <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} />
+                <button onClick={handleImageUpload} disabled={!imageFile || isUploading} style={{ marginLeft: '10px' }}>
+                    {isUploading ? 'Загрузка...' : 'Загрузить'}
+                </button>
+            </div>
             
             {user && ( 
                 <button onClick={handleLike} style={{ marginTop: '10px' }}>
