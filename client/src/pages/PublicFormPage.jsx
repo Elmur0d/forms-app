@@ -78,6 +78,10 @@ function PublicFormPage() {
 
   const hasLiked = template.likes.some(like => like.userId === user?.id);
 
+  const isSubmitDisabled = 
+    Object.keys(answers).length !== template.questions.length || 
+    Object.values(answers).some(answer => String(answer).trim() === '');
+
   return (
     <div style={{ maxWidth: '700px', margin: 'auto', padding: '20px' }}>
       <h1>{template.title}</h1>
@@ -111,7 +115,7 @@ function PublicFormPage() {
         ))}
         <hr/>
         {user ? (
-          <button type="submit">Отправить</button>
+          <button type="submit" disabled={isSubmitDisabled}>Отправить</button>
         ) : (
           <p>Пожалуйста, <a href="/login">войдите</a>, чтобы отправить форму.</p>
         )}
