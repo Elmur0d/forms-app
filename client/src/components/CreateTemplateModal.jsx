@@ -22,6 +22,33 @@ function CreateTemplateModal({ isOpen, onRequestClose }) {
   const createTemplate = useTemplateStore((state) => state.createTemplate);
   const [topic, setTopic] = useState('OTHER');
   const [tags, setTags] = useState('');
+  const [tagSuggestions, setTagSuggestions] = useState([]);
+
+
+  useEffect(() => {
+    if (!tags.includes(',')) { 
+      const fetchSuggestions = async () => {
+        if (tags.trim().length === 0) {
+          setTagSuggestions([]);
+          return;
+        }
+        try {
+          const { data } = await axios.get(`${API_URL}/api/tags/search?term=${tags.trim()}`);
+          setTagSuggestions(data);
+        } catch (error) {
+          console.error("Failed to fetch tag suggestions", error);
+        }
+      };
+      fetchSuggestions();
+    } else {
+      setTagSuggestions([]);
+    }
+  }, [tags]);
+
+  const handleSuggestionClick = (tagName) => {
+    setTags(tagName + ', '); 
+    setTagSuggestions([]); 
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,6 +104,15 @@ function CreateTemplateModal({ isOpen, onRequestClose }) {
             onChange={(e) => setTags(e.target.value)}
             style={{ width: '100%' }}
           />
+          {tagSuggestions.length > 0 && (
+            <ul style={{ position: 'absolute', background: '#555', listStyle: 'none', padding: '5px', margin: 0, width: '100%', zIndex: 10 }}>
+              {tagSuggestions.map(tag => (
+                <li key={tag.id} onClick={() => handleSuggestionClick(tag.name)} style={{ cursor: 'pointer', padding: '5px' }}>
+                  {tag.name}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <button type="submit">Создать</button>
         <button type="button" onClick={onRequestClose} style={{ marginLeft: '10px' }}>
