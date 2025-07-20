@@ -40,7 +40,12 @@ export const createTemplate = async (req, res) => {
 export const getTemplates = async (req, res) => {
   try {
     const templates = await prisma.template.findMany({
-      where: { isPublic: true },
+      where: { 
+        isPublic: true,
+        questions: { 
+          some: {}     
+        }
+       },
       orderBy: { createdAt: 'desc' }, 
       include: {
         author: {
@@ -185,7 +190,12 @@ export const deleteTemplate = async (req, res) => {
 export const getPopularTemplates = async (req, res) => {
   try {
     const popularTemplates = await prisma.template.findMany({
-      where: { isPublic: true },
+      where: { 
+        isPublic: true,
+        questions: { 
+          some: {}    
+        }  
+       },
       include: {
         _count: { 
           select: { forms: true }, 

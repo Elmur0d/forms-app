@@ -5,7 +5,12 @@ export const searchTemplates = async (req, res) => {
   const { term, tag } = req.query; 
 
   try {
-    const whereClause = { isPublic: true }; 
+    const whereClause = { 
+      isPublic: true,
+      questions: { 
+        some: {}    
+      } 
+     }; 
 
     if (term) {
       whereClause.OR = [
