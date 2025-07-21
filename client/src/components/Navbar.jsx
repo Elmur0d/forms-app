@@ -1,14 +1,20 @@
-import React, { useState } from 'react'; 
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next'; 
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
-import HelpTicketModal from './HelpTicketModal'; 
+import HelpTicketModal from './HelpTicketModal';
 import SearchBar from './SearchBar';
 
 function Navbar() {
-  const { user, logout } = useAuthStore();
+  const { t, i18n } = useTranslation(); 
+  const { user } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
-  const [isHelpModalOpen, setHelpModalOpen] = useState(false); 
+  const [isHelpModalOpen, setHelpModalOpen] = useState(false);
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
 
   return (
     <>
@@ -17,43 +23,40 @@ function Navbar() {
           FormsApp
         </Link>
         <SearchBar />
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {/* --- Переключатель языка --- */}
+          <button onClick={() => changeLanguage('ru')} disabled={i18n.language === 'ru'} style={{ marginRight: '5px' }}>RU</button>
+          <button onClick={() => changeLanguage('en')} disabled={i18n.language === 'en'} style={{ marginRight: '1rem' }}>EN</button>
+          
           <button onClick={() => setHelpModalOpen(true)} style={{ marginRight: '1rem' }}>
-            Помощь
+            {t('nav.help')}
           </button>
           
           <button onClick={toggleTheme} style={{ marginRight: '1rem' }}>
-            {theme === 'dark' ? 'Светлая' : 'Темная'} тема
+            {theme === 'dark' ? t('nav.theme_light') : t('nav.theme_dark')}
           </button>
           
           {user ? (
             <>
-              {user.role === 'ADMIN' && (
-                <Link to="/admin" style={{ color: 'yellow', marginRight: '1rem' }}>
-                  Админ-панель
-                </Link>
-              )}
+              {user.role === 'ADMIN' && ( <Link to="/admin" style={{ color: 'yellow', marginRight: '1rem' }}> {t('nav.admin_panel', 'Админ-панель')} </Link> )}
               <Link to="/dashboard" style={{ color: 'white', marginRight: '1rem' }}>
-                Личный кабинет
+                {t('nav.dashboard')}
               </Link>
-              <button onClick={logout}>Выйти</button>
+              <a href="/login" onClick={useAuthStore.getState().logout} style={{ color: 'white', cursor: 'pointer' }}>{t('nav.logout')}</a>
             </>
           ) : (
             <>
               <Link to="/login" style={{ color: 'white', marginRight: '1rem' }}>
-                Войти
+                {t('nav.login')}
               </Link>
               <Link to="/register" style={{ color: 'white' }}>
-                Регистрация
+                {t('nav.register')}
               </Link>
             </>
           )}
         </div>
       </nav>
-      <HelpTicketModal 
-        isOpen={isHelpModalOpen}
-        onRequestClose={() => setHelpModalOpen(false)}
-      />
+      <HelpTicketModal isOpen={isHelpModalOpen} onRequestClose={() => setHelpModalOpen(false)} />
     </>
   );
 }

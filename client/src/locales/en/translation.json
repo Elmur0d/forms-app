@@ -1,0 +1,15 @@
+{
+  "nav": {
+    "search": "Search",
+    "help": "Help",
+    "theme_light": "Light Theme",
+    "theme_dark": "Dark Theme",
+    "dashboard": "Dashboard",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register"
+  },
+  "home": {
+    "welcome": "Welcome to FormsApp!"
+  }
+}

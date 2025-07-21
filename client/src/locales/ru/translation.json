@@ -1,0 +1,15 @@
+{
+  "nav": {
+    "search": "Найти",
+    "help": "Помощь",
+    "theme_light": "Светлая тема",
+    "theme_dark": "Темная тема",
+    "dashboard": "Личный кабинет",
+    "logout": "Выйти",
+    "login": "Войти",
+    "register": "Регистрация"
+  },
+  "home": {
+    "welcome": "Добро пожаловать в FormsApp!"
+  }
+}
