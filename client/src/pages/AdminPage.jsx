@@ -8,6 +8,7 @@ function AdminPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user: adminUser, token } = useAuthStore();
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -89,15 +90,35 @@ function AdminPage() {
                 
                 {adminUser.id !== user.id && (
                   <>
-                    <button onClick={() => handleToggleBlock(user.id)} style={{ marginRight: '10px' }}>
-                        {user.isBlocked ? 'Разблокировать' : 'Заблокировать'}
+                    <button onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}>
+                      Действия (⋮)
                     </button>
-                    <button onClick={() => handleToggleAdmin(user.id)} style={{ marginRight: '10px' }}>
-                      {user.role === 'ADMIN' ? 'Убрать админа' : 'Сделать админом'}
-                    </button>
-                    <button onClick={() => handleDeleteUser(user.id)} style={{ background: '#8B0000' }}>
-                      Удалить
-                    </button>
+                    
+                    {openMenuId === user.id && (
+                      <div style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '40px',
+                        background: '#555',
+                        border: '1px solid #777',
+                        borderRadius: '5px',
+                        padding: '10px',
+                        zIndex: 10,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px',
+                      }}>
+                        <button onClick={() => { handleToggleBlock(user.id); setOpenMenuId(null); }}>
+                            {user.isBlocked ? 'Разблокировать' : 'Заблокировать'}
+                        </button>
+                        <button onClick={() => { handleToggleAdmin(user.id); setOpenMenuId(null); }}>
+                          {user.role === 'ADMIN' ? 'Убрать админа' : 'Сделать админом'}
+                        </button>
+                        <button onClick={() => { handleDeleteUser(user.id); setOpenMenuId(null); }} style={{ background: '#8B0000' }}>
+                          Удалить
+                        </button>
+                      </div>
+                    )}
                   </>
                 )}
               </td>

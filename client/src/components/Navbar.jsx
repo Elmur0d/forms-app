@@ -24,7 +24,6 @@ function Navbar() {
         </Link>
         <SearchBar />
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          {/* --- Переключатель языка --- */}
           <button onClick={() => changeLanguage('ru')} disabled={i18n.language === 'ru'} style={{ marginRight: '5px' }}>RU</button>
           <button onClick={() => changeLanguage('en')} disabled={i18n.language === 'en'} style={{ marginRight: '1rem' }}>EN</button>
           
