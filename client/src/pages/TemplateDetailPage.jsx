@@ -11,6 +11,8 @@ const API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 function SortableQuestionItem({ question, handleDelete, handleEdit }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: question.id });
+  const [isMenuOpen, setIsMenuOpen] = useState(false); 
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -22,15 +24,31 @@ function SortableQuestionItem({ question, handleDelete, handleEdit }) {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    cursor: 'grab',
   };
 
   return (
-    <li ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <span>{question.title} ({question.type})</span>
-      <div>
-        <button onPointerDown={(e) => e.stopPropagation()} onClick={() => handleEdit(question)} style={{ color: 'lightblue', border: 'none', background: 'transparent', cursor: 'pointer', marginRight: '10px' }}>Редактировать</button>
-        <button onPointerDown={(e) => e.stopPropagation()} onClick={() => handleDelete(question.id)} style={{ color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}>Удалить</button>
+    <li ref={setNodeRef} style={style}>
+      <span {...attributes} {...listeners} style={{ flexGrow: 1, cursor: 'grab' }}>
+        {question.title} ({question.type})
+      </span>
+      
+      <div style={{ position: 'relative' }}>
+        <button onPointerDown={(e) => e.stopPropagation()} onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          ⚙️
+        </button>
+        {isMenuOpen && (
+          <div style={{
+            position: 'absolute', right: 0, top: '100%', background: '#555',
+            border: '1px solid #777', borderRadius: '5px', padding: '10px', zIndex: 10
+          }}>
+            <button onPointerDown={(e) => e.stopPropagation()} onClick={() => { handleEdit(question); setIsMenuOpen(false); }}>
+              Редактировать
+            </button>
+            <button onPointerDown={(e) => e.stopPropagation()} onClick={() => { handleDelete(question.id); setIsMenuOpen(false); }} style={{ marginTop: '5px' }}>
+              Удалить
+            </button>
+          </div>
+        )}
       </div>
     </li>
   );
